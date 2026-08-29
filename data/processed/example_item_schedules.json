@@ -1,0 +1,402 @@
+{
+  "CA_2_FOODS_3_329": {
+    "store": "CA_2",
+    "item_id": "FOODS_3_329",
+    "product_name": "Farm Cheese Wheel 6pk",
+    "shelf_life_days": 24,
+    "current_stock": 507.0,
+    "baseline_daily_demand": 16.0,
+    "schedule": [
+      {
+        "days_remaining": 24,
+        "stock_at_start_of_day": 507.0,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 487.3,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 23,
+        "stock_at_start_of_day": 487.3,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 467.6,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 22,
+        "stock_at_start_of_day": 467.6,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 448.0,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 21,
+        "stock_at_start_of_day": 448.0,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 428.3,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 20,
+        "stock_at_start_of_day": 428.3,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 408.6,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 19,
+        "stock_at_start_of_day": 408.6,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 388.9,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 18,
+        "stock_at_start_of_day": 388.9,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 369.2,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 17,
+        "stock_at_start_of_day": 369.2,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 349.5,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 16,
+        "stock_at_start_of_day": 349.5,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 329.9,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 15,
+        "stock_at_start_of_day": 329.9,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 310.2,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 14,
+        "stock_at_start_of_day": 310.2,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 290.5,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 13,
+        "stock_at_start_of_day": 290.5,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 270.8,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 12,
+        "stock_at_start_of_day": 270.8,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 251.1,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 11,
+        "stock_at_start_of_day": 251.1,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 231.4,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 10,
+        "stock_at_start_of_day": 231.4,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 211.8,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 9,
+        "stock_at_start_of_day": 211.8,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 192.1,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 8,
+        "stock_at_start_of_day": 192.1,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 172.4,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 7,
+        "stock_at_start_of_day": 172.4,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 152.7,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 6,
+        "stock_at_start_of_day": 152.7,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 133.0,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 5,
+        "stock_at_start_of_day": 133.0,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 113.3,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 4,
+        "stock_at_start_of_day": 113.3,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 93.7,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 3,
+        "stock_at_start_of_day": 93.7,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 74.0,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 2,
+        "stock_at_start_of_day": 74.0,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 54.3,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 1,
+        "stock_at_start_of_day": 54.3,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 34.6,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      },
+      {
+        "days_remaining": 0,
+        "stock_at_start_of_day": 34.6,
+        "applied_discount_pct": 50,
+        "units_sold_today": 19.7,
+        "stock_remaining": 14.9,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      }
+    ]
+  },
+  "CA_1_FOODS_3_037": {
+    "store": "CA_1",
+    "item_id": "FOODS_3_037",
+    "product_name": "Family Size Fresh Orange Juice 300g",
+    "shelf_life_days": 12,
+    "current_stock": 83.0,
+    "baseline_daily_demand": 4.71,
+    "schedule": [
+      {
+        "days_remaining": 12,
+        "stock_at_start_of_day": 83.0,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 76.2,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 11,
+        "stock_at_start_of_day": 76.2,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 69.3,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 10,
+        "stock_at_start_of_day": 69.3,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 62.5,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 9,
+        "stock_at_start_of_day": 62.5,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 55.7,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 8,
+        "stock_at_start_of_day": 55.7,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 48.9,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 7,
+        "stock_at_start_of_day": 48.9,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 42.0,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 6,
+        "stock_at_start_of_day": 42.0,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 35.2,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 5,
+        "stock_at_start_of_day": 35.2,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 28.4,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 4,
+        "stock_at_start_of_day": 28.4,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 21.5,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 3,
+        "stock_at_start_of_day": 21.5,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 14.7,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 2,
+        "stock_at_start_of_day": 14.7,
+        "applied_discount_pct": 25,
+        "units_sold_today": 7.6,
+        "stock_remaining": 7.1,
+        "waste_min_discount_pct": 25,
+        "revenue_max_discount_pct": 25,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 1,
+        "stock_at_start_of_day": 7.1,
+        "applied_discount_pct": 20,
+        "units_sold_today": 6.8,
+        "stock_remaining": 0.3,
+        "waste_min_discount_pct": 20,
+        "revenue_max_discount_pct": 20,
+        "reachable_target": true
+      },
+      {
+        "days_remaining": 0,
+        "stock_at_start_of_day": 0.3,
+        "applied_discount_pct": 50,
+        "units_sold_today": 0.3,
+        "stock_remaining": 0.0,
+        "waste_min_discount_pct": 50,
+        "revenue_max_discount_pct": 0,
+        "reachable_target": false
+      }
+    ]
+  }
+}
