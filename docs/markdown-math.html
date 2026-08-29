@@ -1,0 +1,577 @@
+<title>Markdown Math</title>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.6/JsBarcode.all.min.js"></script>
+<style>
+  :root{
+    --bg:#F2F6F3;
+    --page-plane:#EAF0EC;
+    --surface:#FFFFFF;
+    --surface-2:#EEF3EF;
+    --border:#DBE4DC;
+    --border-strong:#C4D1C6;
+    --text-primary:#152019;
+    --text-secondary:#525F55;
+    --text-muted:#889288;
+    --accent:#0E8F63;
+    --accent-strong:#0A6E4C;
+    --accent-wash: rgba(14,143,99,0.10);
+    --highlight:#C98500;
+    --highlight-strong:#8A5C00;
+    --highlight-wash: rgba(237,161,0,0.14);
+    --grid:#DDE5DE;
+    --status-good:#0CA30C;
+    --status-warning:#C98211;
+    --status-serious:#D9642A;
+    --status-critical:#B23A3A;
+    --shadow: 0 1px 2px rgba(21,32,25,0.04), 0 8px 24px -12px rgba(21,32,25,0.12);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#10150F;
+      --page-plane:#0C0F0B;
+      --surface:#181F19;
+      --surface-2:#1F2721;
+      --border:#2B352E;
+      --border-strong:#3A473D;
+      --text-primary:#EBF2ED;
+      --text-secondary:#A9B6AC;
+      --text-muted:#748078;
+      --accent:#22B37E;
+      --accent-strong:#3FCB97;
+      --accent-wash: rgba(34,179,126,0.16);
+      --highlight:#D69A2B;
+      --highlight-strong:#EFB854;
+      --highlight-wash: rgba(214,154,43,0.16);
+      --grid:#26302A;
+      --status-good:#2FBE55;
+      --status-warning:#E0AC3D;
+      --status-serious:#E2854F;
+      --status-critical:#D96565;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px -12px rgba(0,0,0,0.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#10150F;
+    --page-plane:#0C0F0B;
+    --surface:#181F19;
+    --surface-2:#1F2721;
+    --border:#2B352E;
+    --border-strong:#3A473D;
+    --text-primary:#EBF2ED;
+    --text-secondary:#A9B6AC;
+    --text-muted:#748078;
+    --accent:#22B37E;
+    --accent-strong:#3FCB97;
+    --accent-wash: rgba(34,179,126,0.16);
+    --highlight:#D69A2B;
+    --highlight-strong:#EFB854;
+    --highlight-wash: rgba(214,154,43,0.16);
+    --grid:#26302A;
+    --status-good:#2FBE55;
+    --status-warning:#E0AC3D;
+    --status-serious:#E2854F;
+    --status-critical:#D96565;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 28px -12px rgba(0,0,0,0.5);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text-primary);
+    font-family:"Source Sans 3", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 24px 96px; }
+  .display{ font-family:"Big Shoulders Display", "Archivo Black", system-ui, sans-serif; font-weight:800; letter-spacing:0.01em; text-wrap:balance; }
+  .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; }
+  a{ color:var(--accent-strong); }
+
+  /* ---------- Header ---------- */
+  header.hero{
+    padding:56px 0 36px;
+    border-bottom:1px solid var(--border);
+  }
+  .eyebrow{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{ content:""; width:8px; height:8px; border-radius:2px; background:var(--accent); display:inline-block; }
+  h1.display{ font-size:56px; line-height:0.98; margin:0 0 16px; color:var(--text-primary); }
+  header.hero p.lede{
+    font-size:18px; line-height:1.55; color:var(--text-secondary);
+    max-width:62ch; margin:0 0 8px;
+  }
+  header.hero p.lede strong{ color:var(--text-primary); font-weight:600; }
+
+  /* ---------- Stat tiles ---------- */
+  .stat-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:1px;
+    background:var(--border);
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+    margin-top:32px;
+  }
+  @media (max-width:700px){ .stat-row{ grid-template-columns:repeat(2,1fr); } }
+  .stat-tile{ background:var(--surface); padding:20px 22px; }
+  .stat-tile .label{ font-size:12.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
+  .stat-tile .value{ font-family:"Big Shoulders Display", sans-serif; font-weight:700; font-size:34px; color:var(--text-primary); line-height:1; }
+  .stat-tile .value span.unit{ font-size:18px; color:var(--text-secondary); font-weight:600; margin-left:2px;}
+  .stat-tile .sub{ font-size:13px; color:var(--text-secondary); margin-top:8px; line-height:1.4; }
+
+  /* ---------- Sections ---------- */
+  section{ padding:52px 0; border-bottom:1px solid var(--border); }
+  section:last-of-type{ border-bottom:none; }
+  .section-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:8px; flex-wrap:wrap; }
+  .section-num{ font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--text-muted); margin-bottom:6px; }
+  h2.display{ font-size:30px; margin:0; color:var(--text-primary); }
+  .section-desc{ font-size:15.5px; color:var(--text-secondary); max-width:68ch; line-height:1.6; margin:14px 0 30px; }
+  .section-desc code{ background:var(--surface-2); padding:1px 6px; border-radius:4px; font-family:"IBM Plex Mono",monospace; font-size:13.5px; }
+  .callout{
+    background:var(--surface-2); border:1px solid var(--border); border-left:3px solid var(--highlight);
+    border-radius:8px; padding:14px 18px; font-size:14px; color:var(--text-secondary); line-height:1.55;
+    margin:18px 0 0;
+  }
+  .callout strong{ color:var(--text-primary); }
+  .callout.accent{ border-left-color:var(--accent); }
+
+  .panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    box-shadow:var(--shadow); padding:26px 28px;
+  }
+
+  /* ---------- Legend ---------- */
+  .legend{ display:flex; gap:20px; flex-wrap:wrap; margin-bottom:18px; font-size:13px; color:var(--text-secondary); }
+  .legend .item{ display:flex; align-items:center; gap:7px; }
+  .legend .swatch{ width:12px; height:12px; border-radius:3px; flex:none; }
+  .legend .swatch.outline{ background:transparent; border:2px solid var(--accent); }
+  .legend .swatch.solid{ background:var(--accent); }
+  .legend .swatch.line{ width:16px; height:2px; border-radius:1px; background:var(--accent); }
+  .legend .swatch.dash{ width:16px; height:0; border-top:2px dashed var(--text-muted); }
+  .legend .swatch.band{ background:var(--highlight-wash); border:1px solid var(--highlight); }
+
+  /* ---------- Elasticity chart ---------- */
+  #elasticity-chart .bar-row{ display:flex; align-items:center; gap:14px; padding:7px 0; }
+  #elasticity-chart .bar-row .store-label{ width:64px; flex:none; font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--text-secondary); }
+  #elasticity-chart .bar-track{ position:relative; flex:1; height:22px; }
+  #elasticity-chart .bar-fill{
+    position:absolute; top:1px; height:20px; border-radius:0 4px 4px 0;
+    background:var(--accent); transition:filter .15s;
+  }
+  #elasticity-chart .bar-fill.fallback{ background:transparent; border:2px dashed var(--accent); }
+  #elasticity-chart .bar-fill:hover{ filter:brightness(1.12); cursor:pointer; }
+  #elasticity-chart .bar-value{ width:64px; flex:none; text-align:right; font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--text-primary); font-weight:600; }
+
+  /* ---------- Small multiples (discount response) ---------- */
+  .sm-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+  @media (max-width:900px){ .sm-grid{ grid-template-columns:repeat(2,1fr); } }
+  .sm-card{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 14px 10px; box-shadow:var(--shadow); }
+  .sm-card .sm-title{ font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--text-secondary); margin-bottom:2px; display:flex; justify-content:space-between; }
+  .sm-card .sm-title .flag{ color:var(--highlight-strong); }
+  .sm-card svg{ display:block; width:100%; height:110px; }
+  .sm-card .sm-bar{ fill:var(--highlight); cursor:pointer; }
+  .sm-card .sm-bar:hover{ filter:brightness(1.1); }
+  .sm-card .sm-baseline{ stroke:var(--text-muted); stroke-width:1; stroke-dasharray:3 3; }
+
+  /* ---------- Item case study ---------- */
+  .item-card{ display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap; margin-bottom:22px; }
+  .item-meta{ background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:16px 18px; min-width:240px; flex:none; }
+  .item-meta .pname{ font-weight:700; font-size:16px; margin-bottom:10px; color:var(--text-primary); }
+  .item-meta dl{ margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 12px; font-size:13px; }
+  .item-meta dt{ color:var(--text-muted); }
+  .item-meta dd{ margin:0; color:var(--text-primary); font-family:"IBM Plex Mono",monospace; }
+  .item-meta .barcode-strip{ margin-top:12px; padding-top:12px; border-top:1px dashed var(--border-strong); }
+  .item-meta .barcode-bars{ height:34px; display:flex; align-items:stretch; gap:1px; margin-bottom:6px; }
+  .item-meta .barcode-bars div{ background:var(--text-primary); }
+  .item-meta .barcode-num{ font-family:"IBM Plex Mono",monospace; font-size:13px; letter-spacing:0.12em; color:var(--text-secondary); }
+  .tier-pill{ display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:3px 10px; border-radius:999px; background:var(--accent-wash); color:var(--accent-strong); font-weight:600; margin-top:2px;}
+
+  #item-chart-wrap{ flex:1; min-width:280px; position:relative; }
+  #item-chart{ width:100%; height:260px; display:block; }
+  .tooltip{
+    position:absolute; pointer-events:none; background:var(--text-primary); color:var(--bg);
+    font-size:12.5px; padding:8px 10px; border-radius:6px; line-height:1.4; opacity:0; transform:translate(-50%,-110%);
+    transition:opacity .1s; white-space:nowrap; z-index:5; font-family:"IBM Plex Mono",monospace;
+    box-shadow:var(--shadow);
+  }
+  .tooltip.visible{ opacity:1; }
+
+  /* ---------- Forecast accuracy ---------- */
+  .metric-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  @media (max-width:800px){ .metric-grid{ grid-template-columns:repeat(2,1fr); } }
+  .metric-card{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 18px 20px; box-shadow:var(--shadow); }
+  .metric-card .m-name{ font-size:12.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px; }
+  .metric-bar-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .metric-bar-row .mb-label{ width:52px; flex:none; font-size:12px; color:var(--text-secondary); }
+  .metric-bar-row .mb-track{ flex:1; height:14px; background:var(--surface-2); border-radius:3px; overflow:hidden; }
+  .metric-bar-row .mb-fill{ height:100%; border-radius:3px 0 0 3px; }
+  .metric-bar-row .mb-fill.model{ background:var(--accent); }
+  .metric-bar-row .mb-fill.naive{ background:var(--text-muted); }
+  .metric-bar-row .mb-val{ width:48px; flex:none; text-align:right; font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--text-primary); }
+  .improve-tag{ display:inline-block; margin-top:10px; font-size:12.5px; font-weight:600; color:var(--status-good); background:rgba(12,163,12,0.10); padding:3px 9px; border-radius:6px; }
+
+  /* ---------- Roadmap ---------- */
+  .roadmap-strip{ display:grid; grid-template-columns:repeat(4,1fr); gap:2px; background:var(--border); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  @media (max-width:820px){ .roadmap-strip{ grid-template-columns:1fr; } }
+  .roadmap-cell{ background:var(--surface); padding:22px 20px; position:relative; }
+  .roadmap-cell .risk-badge{ display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; padding:4px 10px; border-radius:999px; margin-bottom:14px; }
+  .risk-badge .dot{ width:8px; height:8px; border-radius:50%; }
+  .risk-badge.low{ background:rgba(12,163,12,0.12); color:var(--status-good); }
+  .risk-badge.low .dot{ background:var(--status-good); }
+  .risk-badge.medium{ background:rgba(201,130,17,0.14); color:var(--status-warning); }
+  .risk-badge.medium .dot{ background:var(--status-warning); }
+  .risk-badge.high{ background:rgba(217,100,42,0.14); color:var(--status-serious); }
+  .risk-badge.high .dot{ background:var(--status-serious); }
+  .risk-badge.critical{ background:rgba(178,58,58,0.14); color:var(--status-critical); }
+  .risk-badge.critical .dot{ background:var(--status-critical); }
+  .roadmap-cell .action{ font-family:"Big Shoulders Display",sans-serif; font-weight:700; font-size:22px; margin-bottom:8px; }
+  .roadmap-cell .desc{ font-size:13.5px; color:var(--text-secondary); line-height:1.5; }
+  .roadmap-cell .arrow{ position:absolute; right:-11px; top:50%; transform:translateY(-50%); width:20px; height:20px; background:var(--bg); border:1px solid var(--border); border-radius:50%; z-index:2; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--text-muted); }
+  @media (max-width:820px){ .roadmap-cell .arrow{ display:none; } }
+
+  footer{ padding:44px 0 20px; }
+  footer p{ font-size:13px; color:var(--text-muted); line-height:1.6; max-width:70ch; }
+
+  table.data-table{ width:100%; border-collapse:collapse; font-size:13px; margin-top:14px; }
+  table.data-table th{ text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); padding:6px 10px; border-bottom:1px solid var(--border-strong); }
+  table.data-table td{ padding:7px 10px; border-bottom:1px solid var(--border); font-family:"IBM Plex Mono",monospace; color:var(--text-secondary); }
+  details.table-toggle{ margin-top:16px; }
+  details.table-toggle summary{ cursor:pointer; font-size:13px; color:var(--accent-strong); font-weight:600; }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">Food Waste Solutions &middot; results so far</div>
+    <h1 class="display">Markdown Math</h1>
+    <p class="lede">The idea: for every product nearing expiry, calculate the <strong>minimum discount, applied at the optimal moment</strong>, that clears it before it becomes waste &mdash; learned per store, not applied as one blanket rule.</p>
+    <p class="lede">Everything below is built on real Walmart sales &amp; price history (M5, Kaggle), filtered to groceries. Shelf life, product names and barcodes are disclosed synthetic layers &mdash; no public dataset tracks real expiry at SKU level.</p>
+
+    <div class="stat-row" id="stat-row"></div>
+  </header>
+
+  <section id="sec-elasticity">
+    <div class="section-num">01</div>
+    <div class="section-head">
+      <h2 class="display">Does a discount actually move it?</h2>
+    </div>
+    <p class="section-desc">A fixed-effects regression on each store's real price history &mdash; controlling for the item's own baseline, day-of-week, month, SNAP and events &mdash; isolates how much demand responds when price moves, independent of everything else going on. This is the number the whole optimizer depends on.</p>
+
+    <div class="panel">
+      <div class="legend">
+        <div class="item"><span class="swatch solid"></span> Store-specific estimate (significant, correct sign)</div>
+        <div class="item"><span class="swatch outline"></span> Unreliable &mdash; pooled fallback used instead</div>
+      </div>
+      <div id="elasticity-chart"></div>
+      <div class="callout">
+        <strong>2 of 10 stores didn't behave.</strong> TX_2 showed no statistically detectable price effect; CA_3 came back positive (quantity <em>rising</em> with price &mdash; almost certainly reverse causality: the store raises prices in response to strong demand). Both were flagged and replaced with the pooled median (&minus;0.94) rather than trusted as-is.
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-discount-response">
+    <div class="section-num">02</div>
+    <div class="section-head">
+      <h2 class="display">The real discount-response curve</h2>
+    </div>
+    <p class="section-desc">Every store-item-day, bucketed by how deep the real discount was, showing average sales relative to that item's own normal volume (dashed line = 1.0&times;, i.e. no lift). Built from real M5 price variation &mdash; not simulated.</p>
+    <div class="sm-grid" id="sm-grid"></div>
+    <div class="callout">
+      <strong>Limitation worth remembering:</strong> over 95% of store-item-days in this data sit at full price &mdash; real discounts deeper than ~15% are rare. That's enough to fit a real curve, but using it to predict behavior at 30&ndash;50% clearance-style markdowns means extrapolating beyond what's directly observed &mdash; a standard constant-elasticity assumption, not a proven fact from this dataset.
+    </div>
+  </section>
+
+  <section id="sec-item">
+    <div class="section-num">03</div>
+    <div class="section-head">
+      <h2 class="display">One real product, one real markdown</h2>
+    </div>
+    <p class="section-desc">A single store-item series pulled directly from the data &mdash; real daily sales, real price changes, no smoothing. The shaded band marks days at &ge;15% off.</p>
+    <div class="item-card">
+      <div class="item-meta" id="item-meta"></div>
+      <div id="item-chart-wrap">
+        <svg id="item-chart"></svg>
+        <div class="tooltip" id="item-tooltip"></div>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="item"><span class="swatch line"></span> Units sold / day</div>
+      <div class="item"><span class="swatch band"></span> &ge;15% discount active</div>
+    </div>
+  </section>
+
+  <section id="sec-forecast">
+    <div class="section-num">04</div>
+    <div class="section-head">
+      <h2 class="display">Forecast accuracy</h2>
+    </div>
+    <p class="section-desc">LightGBM, trained on ~5M rows across 10 stores, validated on the most recent 28 days &mdash; against a naive "same as last week" baseline.</p>
+    <div class="metric-grid" id="metric-grid"></div>
+    <div class="callout">
+      WMAPE looks high (61%) in isolation &mdash; that's expected, not a red flag: 47% of store-item-days have zero units sold, so a miss of 1 unit on a 1-unit day is a "100% error" despite being trivial in absolute terms. This is exactly why the real M5 competition uses a custom weighted metric (WRMSSE) instead of raw percentage error.
+    </div>
+  </section>
+
+  <section id="sec-roadmap">
+    <div class="section-num">05</div>
+    <div class="section-head">
+      <h2 class="display">Where this connects &mdash; not built yet</h2>
+    </div>
+    <p class="section-desc">The forecast, elasticity and shelf-life pieces above feed into a per-product <strong>surplus risk score</strong>, which triggers an action. This section is the design plan, not computed output &mdash; flagged clearly so it isn't mistaken for a result.</p>
+    <div class="roadmap-strip">
+      <div class="roadmap-cell">
+        <div class="risk-badge low"><span class="dot"></span>Low risk</div>
+        <div class="action">Monitor</div>
+        <div class="desc">Forecast comfortably clears remaining stock before expiry. No action needed.</div>
+        <div class="arrow">&rarr;</div>
+      </div>
+      <div class="roadmap-cell">
+        <div class="risk-badge medium"><span class="dot"></span>Medium risk</div>
+        <div class="action">Small markdown</div>
+        <div class="desc">Minor gap between forecast sell-through and stock on hand &mdash; a modest, store-tuned discount closes it.</div>
+        <div class="arrow">&rarr;</div>
+      </div>
+      <div class="roadmap-cell">
+        <div class="risk-badge high"><span class="dot"></span>High risk</div>
+        <div class="action">Deep markdown or transfer</div>
+        <div class="desc">Unlikely to clear at current price. Compare a deeper discount against transferring stock to a store running low.</div>
+        <div class="arrow">&rarr;</div>
+      </div>
+      <div class="roadmap-cell">
+        <div class="risk-badge critical"><span class="dot"></span>Critical</div>
+        <div class="action">Donate</div>
+        <div class="desc">No discount will clear it in time. Flag for donation before it becomes waste.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Real data: M5 Forecasting &ndash; Accuracy (Walmart, via Kaggle) &mdash; daily sales, store prices, calendar &amp; SNAP data, filtered to the FOODS category. Synthetic, disclosed: shelf-life tiers, product names, EAN-13 barcodes. No supermarket's real inventory or POS data is used anywhere in this project.</p>
+  </footer>
+
+</div>
+
+<script>
+const DATA = {"elasticity":{"fallback_elasticity":-0.9424,"by_store":{"CA_1":{"elasticity":-1.665,"se":0.0573,"p_value":0.0,"n_obs":536001,"n_discounted_obs":15408,"r_squared":0.0215,"used_elasticity":-1.665,"source":"store_specific"},"CA_2":{"elasticity":-0.2989,"se":0.0435,"p_value":0.0,"n_obs":536001,"n_discounted_obs":15280,"r_squared":0.0378,"used_elasticity":-0.2989,"source":"store_specific"},"CA_3":{"elasticity":2.2652,"se":0.0252,"p_value":0.0,"n_obs":536001,"n_discounted_obs":41739,"r_squared":0.0487,"used_elasticity":-0.9424,"source":"pooled_fallback"},"CA_4":{"elasticity":-0.8511,"se":0.0381,"p_value":0.0,"n_obs":536001,"n_discounted_obs":15160,"r_squared":0.0081,"used_elasticity":-0.8511,"source":"store_specific"},"TX_1":{"elasticity":-0.1012,"se":0.0236,"p_value":1.9e-05,"n_obs":536001,"n_discounted_obs":14218,"r_squared":0.0102,"used_elasticity":-0.1012,"source":"store_specific"},"TX_2":{"elasticity":0.0053,"se":0.015,"p_value":0.721561,"n_obs":536001,"n_discounted_obs":14703,"r_squared":0.0105,"used_elasticity":-0.9424,"source":"pooled_fallback"},"TX_3":{"elasticity":-0.135,"se":0.0226,"p_value":0.0,"n_obs":536001,"n_discounted_obs":14874,"r_squared":0.0089,"used_elasticity":-0.135,"source":"store_specific"},"WI_1":{"elasticity":-1.2015,"se":0.0499,"p_value":0.0,"n_obs":536001,"n_discounted_obs":16373,"r_squared":0.0228,"used_elasticity":-1.2015,"source":"store_specific"},"WI_2":{"elasticity":-1.0337,"se":0.1844,"p_value":0.0,"n_obs":536001,"n_discounted_obs":16922,"r_squared":0.0256,"used_elasticity":-1.0337,"source":"store_specific"},"WI_3":{"elasticity":-1.1557,"se":0.0451,"p_value":0.0,"n_obs":536001,"n_discounted_obs":16646,"r_squared":0.0225,"used_elasticity":-1.1557,"source":"store_specific"}}},"metrics":{"model_mae":1.2003,"model_rmse":2.3067,"naive_lag7_mae":1.5533,"naive_lag7_rmse":3.2311,"mae_improvement_pct":22.7,"rmse_improvement_pct":28.6,"best_iteration":403,"n_train_rows":4957650,"n_valid_rows":402360,"valid_days":28,"r2":0.7536,"naive_r2":0.5166,"mape_pct_nonzero_days":53.8,"wmape_pct":61.1,"naive_wmape_pct":79.0,"pct_of_days_with_zero_sales":47.4},"feature_importance":[{"feature":"roll_mean_7","gain":89229581.72109604},{"feature":"roll_mean_28","gain":22584195.387498856},{"feature":"item_id","gain":6201562.708044052},{"feature":"lag_7","gain":3779573.1509218216},{"feature":"lag_28","gain":1119084.446228981},{"feature":"wday","gain":1058323.5211610794},{"feature":"store_id","gain":440662.57614326477},{"feature":"sell_price","gain":374500.38474178314},{"feature":"month","gain":347514.6536331177},{"feature":"snap","gain":317558.67072200775},{"feature":"has_event","gain":142919.77448272705},{"feature":"is_weekend","gain":132009.72368717194},{"feature":"price_ratio","gain":122411.49609565735},{"feature":"state_id","gain":59728.356843948364},{"feature":"dept_id","gain":49664.63548660278},{"feature":"year","gain":46491.057547569275}],"discount_response":{"CA_1":[{"bucket":"full_price","price_ratio_range":"[1.00, 1.01)","n_obs":519516,"mean_qty_norm":0.9767},{"bucket":"0-2pct_off","price_ratio_range":"[0.98, 1.00)","n_obs":1077,"mean_qty_norm":1.5353},{"bucket":"2-5pct_off","price_ratio_range":"[0.95, 0.98)","n_obs":1458,"mean_qty_norm":1.1137},{"bucket":"5-10pct_off","price_ratio_range":"[0.90, 0.95)","n_obs":5852,"mean_qty_norm":1.8872},{"bucket":"10pct_plus_off","price_ratio_range":"[0.00, 0.90)","n_obs":8098,"mean_qty_norm":1.7618}],"CA_2":[{"bucket":"full_price","price_ratio_range":"[1.00, 1.01)","n_obs":519425,"mean_qty_norm":0.9754},{"bucket":"0-2pct_off","price_ratio_range":"[0.98, 1.00)","n_obs":1296,"mean_qty_norm":1.7132},{"bucket":"2-5pct_off","price_ratio_range":"[0.95, 0.98)","n_obs":1293,"mean_qty_norm":1.0606},{"bucket":"5-10pct_off","price_ratio_range":"[0.90, 0.95)","n_obs":4408,"mean_qty_norm":2.2568},{"bucket":"10pct_plus_off","price_ratio_range":"[0.00, 0.90)","n_obs":9579,"mean_qty_norm":1.6504}],"CA_3":[{"bucket":"full_price","price_ratio_range":"[1.00, 1.01)","n_obs":493795,"mean_qty_norm":1.0411},{"bucket":"0-2pct_off","price_ratio_range":"[0.98, 1.00)","n_obs":467,"mean_qty_norm":1.6662},{"bucket":"2-5pct_off","price_ratio_range":"[0.95, 0.98)","n_obs":1051,"mean_qty_norm":1.1458},{"bucket":"5-10pct_off","price_ratio_range":"[0.90, 0.95)","n_obs":7768,"mean_qty_norm":0.6497},{"bucket":"10pct_plus_off","price_ratio_range":"[0.00, 0.90)","n_obs":32920,"mean_qty_norm":0.4523}],"CA_4":[{"bucket":"full_price","price_ratio_range":"[1.00, 1.01)","n_obs":519685,"mean_qty_norm":0.9746},{"bucket":"0-2pct_off","price_ratio_range":"[0.98, 1.00)","n_obs":1156,"mean_qty_norm":1.4977},{"bucket":"2-5pct_off","price_ratio_range":"[0.95, 0.98)","n_obs":1328,"mean_qty_norm":1.2466},{"bucket":"5-10pct_off","price_ratio_range":"[0.90, 0.95)","n_obs":6133,"mean_qty_norm":1.93},{"bucket":"10pct_plus_off","price_ratio_range":"[0.00, 0.90)","n_obs":7699,"mean_qty_norm":1.8561}],"TX_1":[{"bucket":"full_price","price_ratio_range":"[1.00, 1.01)","n_obs":519728,"mean_qty_norm":0.9831},{"bucket":"0-2pct_off","price_ratio_range":"[0.98, 1.00)","n_obs":2055,"mean_qty_norm":1.3152},{"bucket":"2-5pct_off","price_ratio_range":"[0.95, 0.98)","n_obs":2363,"mean_qty_norm":1.9387},{"bucket":"5-10pct_off","price_ratio_range":"[0.90, 0.95)","n_obs":2941,"mean_qty_norm":1.5017},{"bucket":"10pct_plus_off","price_ratio_range":"[0.00, 0.90)","n_obs":8914,"mean_qty_norm":1.4985}],"TX_2":[{"bucket":"full_price","price_ratio_range":"[1.00, 1.01)","n_obs":519147,"mean_qty_norm":0.9828},{"bucket":"0-2pct_off","price_ratio_range":"[0.98, 1.00)","n_obs":2151,"mean_qty_norm":1.321},{"bucket":"2-5pct_off","price_ratio_range":"[0.95, 0.98)","n_obs":2099,"mean_qty_norm":2.0565},{"bucket":"5-10pct_off","price_ratio_range":"[0.90, 0.95)","n_obs":3091,"mean_qty_norm":1.3525},{"bucket":"10pct_plus_off","price_ratio_range":"[0.00, 0.90)","n_obs":9513,"mean_qty_norm":1.5194}],"TX_3":[{"bucket":"full_price","price_ratio_range":"[1.00, 1.01)","n_obs":519034,"mean_qty_norm":0.9747},{"bucket":"0-2pct_off","price_ratio_range":"[0.98, 1.00)","n_obs":2093,"mean_qty_norm":1.4408},{"bucket":"2-5pct_off","price_ratio_range":"[0.95, 0.98)","n_obs":1991,"mean_qty_norm":1.4131},{"bucket":"5-10pct_off","price_ratio_range":"[0.90, 0.95)","n_obs":3774,"mean_qty_norm":2.2245},{"bucket":"10pct_plus_off","price_ratio_range":"[0.00, 0.90)","n_obs":9109,"mean_qty_norm":1.742}],"WI_1":[{"bucket":"full_price","price_ratio_range":"[1.00, 1.01)","n_obs":517963,"mean_qty_norm":0.9762},{"bucket":"0-2pct_off","price_ratio_range":"[0.98, 1.00)","n_obs":1665,"mean_qty_norm":1.269},{"bucket":"2-5pct_off","price_ratio_range":"[0.95, 0.98)","n_obs":1670,"mean_qty_norm":1.0978},{"bucket":"5-10pct_off","price_ratio_range":"[0.90, 0.95)","n_obs":6383,"mean_qty_norm":2.0152},{"bucket":"10pct_plus_off","price_ratio_range":"[0.00, 0.90)","n_obs":8320,"mean_qty_norm":1.6291}],"WI_2":[{"bucket":"full_price","price_ratio_range":"[1.00, 1.01)","n_obs":517091,"mean_qty_norm":0.9736},{"bucket":"0-2pct_off","price_ratio_range":"[0.98, 1.00)","n_obs":1988,"mean_qty_norm":1.2594},{"bucket":"2-5pct_off","price_ratio_range":"[0.95, 0.98)","n_obs":1950,"mean_qty_norm":1.3858},{"bucket":"5-10pct_off","price_ratio_range":"[0.90, 0.95)","n_obs":6539,"mean_qty_norm":1.9989},{"bucket":"10pct_plus_off","price_ratio_range":"[0.00, 0.90)","n_obs":8433,"mean_qty_norm":1.6924}],"WI_3":[{"bucket":"full_price","price_ratio_range":"[1.00, 1.01)","n_obs":517388,"mean_qty_norm":0.9735},{"bucket":"0-2pct_off","price_ratio_range":"[0.98, 1.00)","n_obs":1967,"mean_qty_norm":1.1908},{"bucket":"2-5pct_off","price_ratio_range":"[0.95, 0.98)","n_obs":2298,"mean_qty_norm":1.3112},{"bucket":"5-10pct_off","price_ratio_range":"[0.90, 0.95)","n_obs":5763,"mean_qty_norm":2.1368},{"bucket":"10pct_plus_off","price_ratio_range":"[0.00, 0.90)","n_obs":8585,"mean_qty_norm":1.7077}]},"example_item":{"store":"CA_2","item_id":"FOODS_3_329","product_name":"Farm Cheese Wheel 6pk","barcode":"3276223148530","shelf_life_tier":"medium","shelf_life_days":24,"series":[{"date":"2015-04-18","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-19","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-20","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-21","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-22","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-23","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-24","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-25","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-26","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-27","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-28","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-29","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-04-30","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-01","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-02","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-03","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-04","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-05","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-06","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-07","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-08","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-09","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-05-10","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-05-11","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-05-12","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-05-13","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-05-14","qty":6.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-05-15","qty":12.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-05-16","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-17","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-18","qty":8.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-19","qty":14.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-20","qty":14.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-21","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-22","qty":19.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-23","qty":19.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-24","qty":19.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-25","qty":22.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-26","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-27","qty":18.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-28","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-29","qty":21.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-05-30","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-05-31","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-01","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-02","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-03","qty":15.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-04","qty":41.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-05","qty":74.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-06","qty":55.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-07","qty":61.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-08","qty":50.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-09","qty":18.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-10","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-11","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-12","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-13","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-14","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-15","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-16","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-17","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-18","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-19","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-20","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-21","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-22","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-23","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-24","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-25","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-26","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-27","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-28","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-29","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-06-30","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-01","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-02","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-03","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-04","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-05","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-06","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-07","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-08","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-09","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-10","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-11","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-12","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-13","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-14","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-15","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-16","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-17","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-18","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-19","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-20","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-21","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-22","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-23","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-24","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-25","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-26","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-27","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-28","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-29","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-30","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-07-31","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-01","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-02","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-03","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-04","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-05","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-06","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-07","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-08","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-09","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-10","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-11","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-12","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-13","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-14","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-15","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-16","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-17","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-18","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-19","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-20","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-21","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-22","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-23","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-24","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-25","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-26","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-08-27","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-08-28","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-08-29","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-08-30","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-08-31","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-01","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-02","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-03","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-04","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-05","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-06","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-07","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-08","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-09","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-10","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-11","qty":0.0,"price_ratio":1.0,"sell_price":1.9800000190734863},{"date":"2015-09-12","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-09-13","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-09-14","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-09-15","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-09-16","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-09-17","qty":1.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-09-18","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-09-19","qty":24.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-20","qty":30.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-21","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-22","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-23","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-24","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-25","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-26","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-27","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-28","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-29","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-09-30","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-01","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-02","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-03","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-04","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-05","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-06","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-07","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-08","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-09","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-10","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-11","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-12","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-13","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-14","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-15","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-16","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-17","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-18","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-19","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-20","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-21","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-22","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-23","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-24","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-25","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-26","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-27","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-28","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-29","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-30","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-10-31","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-01","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-02","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-03","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-04","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-05","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-06","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-07","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-08","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-09","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-10","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-11","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-12","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-13","qty":0.0,"price_ratio":0.6644295454025269,"sell_price":1.9800000190734863},{"date":"2015-11-14","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-15","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-16","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-17","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-18","qty":4.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-19","qty":11.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-20","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-21","qty":20.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-22","qty":17.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-23","qty":9.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-24","qty":9.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-25","qty":17.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-26","qty":6.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-27","qty":6.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-28","qty":8.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-29","qty":16.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-11-30","qty":47.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-01","qty":24.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-02","qty":18.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-03","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-04","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-05","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-06","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-07","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-08","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-09","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-10","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-11","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-12","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-13","qty":37.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-14","qty":5.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-15","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-16","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-17","qty":22.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-18","qty":8.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-19","qty":29.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-20","qty":25.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-21","qty":12.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-22","qty":30.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-23","qty":34.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-24","qty":21.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-25","qty":0.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-26","qty":33.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-27","qty":20.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-28","qty":18.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-29","qty":17.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-30","qty":23.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2015-12-31","qty":9.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-01","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-02","qty":26.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-03","qty":24.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-04","qty":14.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-05","qty":6.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-06","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-07","qty":8.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-08","qty":9.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-09","qty":20.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-10","qty":29.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-11","qty":25.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-12","qty":10.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-13","qty":7.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-14","qty":8.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-15","qty":16.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-16","qty":36.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-17","qty":36.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-18","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-19","qty":17.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-20","qty":6.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-21","qty":3.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-22","qty":18.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-23","qty":21.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-24","qty":5.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-25","qty":6.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-26","qty":6.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-27","qty":7.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-28","qty":9.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-29","qty":16.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-30","qty":26.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-01-31","qty":42.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-01","qty":21.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-02","qty":28.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-03","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-04","qty":21.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-05","qty":18.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-06","qty":25.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-07","qty":27.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-08","qty":21.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-09","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-10","qty":7.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-11","qty":16.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-12","qty":14.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-13","qty":23.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-14","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-15","qty":12.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-16","qty":10.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-17","qty":17.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-18","qty":17.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-19","qty":19.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-20","qty":14.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-21","qty":19.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-22","qty":4.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-23","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-24","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-25","qty":10.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-26","qty":14.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-27","qty":24.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-28","qty":27.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-02-29","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-01","qty":7.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-02","qty":12.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-03","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-04","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-05","qty":14.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-06","qty":27.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-07","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-08","qty":7.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-09","qty":18.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-10","qty":2.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-11","qty":22.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-12","qty":12.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-13","qty":20.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-14","qty":16.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-15","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-16","qty":3.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-17","qty":8.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-18","qty":7.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-19","qty":5.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-20","qty":6.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-21","qty":8.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-22","qty":10.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-23","qty":16.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-24","qty":14.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-25","qty":12.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-26","qty":16.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-27","qty":20.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-28","qty":29.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-29","qty":14.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-30","qty":19.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-03-31","qty":14.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-01","qty":40.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-02","qty":43.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-03","qty":48.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-04","qty":18.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-05","qty":32.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-06","qty":21.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-07","qty":16.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-08","qty":11.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-09","qty":29.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-10","qty":22.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-11","qty":23.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-12","qty":13.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-13","qty":11.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-14","qty":9.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-15","qty":9.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-16","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-17","qty":18.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-18","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-19","qty":11.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-20","qty":16.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-21","qty":15.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-22","qty":16.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-23","qty":21.0,"price_ratio":1.0,"sell_price":2.9800000190734863},{"date":"2016-04-24","qty":35.0,"price_ratio":1.0,"sell_price":2.9800000190734863}]}};
+
+function fmt(n, d=2){ return Number(n).toFixed(d); }
+function pct(n, d=1){ return Number(n).toFixed(d) + '%'; }
+
+/* ---------- Stat row ---------- */
+(function renderStats(){
+  const el = document.getElementById('stat-row');
+  const m = DATA.metrics;
+  const stores = Object.values(DATA.elasticity.by_store);
+  const validEls = stores.filter(s => s.source === 'store_specific').map(s => s.elasticity);
+  const minE = Math.min(...validEls), maxE = Math.max(...validEls);
+  const tiles = [
+    {label:'Forecast improvement vs naive', value: pct(m.mae_improvement_pct), sub:'lower MAE than "same as last week"'},
+    {label:'Stores analyzed', value:'10', sub:'CA, TX & WI &mdash; real M5 store panel'},
+    {label:'Store elasticity range', value: fmt(minE,2)+' to '+fmt(maxE,2), sub:'8 of 10 stores, statistically significant'},
+    {label:'FOODS items modeled', value:'1,437', sub:'27.5M real store-item-days'},
+  ];
+  el.innerHTML = tiles.map(t => `
+    <div class="stat-tile">
+      <div class="label">${t.label}</div>
+      <div class="value">${t.value}</div>
+      <div class="sub">${t.sub}</div>
+    </div>`).join('');
+})();
+
+/* ---------- Elasticity bar chart ---------- */
+(function renderElasticity(){
+  const el = document.getElementById('elasticity-chart');
+  const entries = Object.entries(DATA.elasticity.by_store)
+    .sort((a,b) => Math.abs(b[1].used_elasticity) - Math.abs(a[1].used_elasticity));
+  const maxAbs = Math.max(...entries.map(([,v]) => Math.abs(v.used_elasticity)));
+  el.innerHTML = entries.map(([store, v]) => {
+    const isFallback = v.source === 'pooled_fallback';
+    const magnitude = Math.abs(v.used_elasticity);
+    const widthPct = (magnitude / maxAbs * 100).toFixed(1);
+    return `
+      <div class="bar-row" title="${store}: using ${fmt(v.used_elasticity,3)}${isFallback ? ' (pooled fallback — raw estimate was ' + fmt(v.elasticity,2) + ', p=' + v.p_value + ', flagged unreliable)' : ' (p=' + v.p_value + ', n_discounted=' + v.n_discounted_obs + ')'}">
+        <div class="store-label">${store}</div>
+        <div class="bar-track">
+          <div class="bar-fill ${isFallback ? 'fallback' : ''}" style="width:${widthPct}%"></div>
+        </div>
+        <div class="bar-value">${fmt(v.used_elasticity,2)}</div>
+      </div>`;
+  }).join('');
+})();
+
+/* ---------- Discount response small multiples ---------- */
+(function renderDiscountResponse(){
+  const grid = document.getElementById('sm-grid');
+  const stores = Object.keys(DATA.discount_response).sort();
+  const allVals = stores.flatMap(s => DATA.discount_response[s].map(b => b.mean_qty_norm).filter(v => v !== null));
+  const maxVal = Math.max(...allVals, 1.2);
+  const W = 200, H = 100, padB = 14, padT = 6;
+  grid.innerHTML = stores.map(store => {
+    const buckets = DATA.discount_response[store];
+    const flagged = DATA.elasticity.by_store[store].source === 'pooled_fallback';
+    const barW = (W / buckets.length) - 6;
+    const baseY = H - padB - ((1 / maxVal) * (H - padB - padT));
+    const bars = buckets.map((b, i) => {
+      const x = i * (W / buckets.length) + 3;
+      const v = b.mean_qty_norm ?? 0;
+      const barH = (v / maxVal) * (H - padB - padT);
+      const y = H - padB - barH;
+      return `<rect class="sm-bar" x="${x}" y="${y}" width="${barW}" height="${Math.max(barH,1)}" rx="2">
+        <title>${store} — ${b.bucket} (${b.price_ratio_range})\\nrelative volume: ${b.mean_qty_norm !== null ? fmt(b.mean_qty_norm,2)+'x' : 'n/a'}\\nn=${b.n_obs}</title>
+      </rect>`;
+    }).join('');
+    return `
+      <div class="sm-card">
+        <div class="sm-title"><span>${store}</span>${flagged ? '<span class="flag">est.</span>' : ''}</div>
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+          <line class="sm-baseline" x1="0" y1="${baseY}" x2="${W}" y2="${baseY}"></line>
+          ${bars}
+        </svg>
+      </div>`;
+  }).join('');
+})();
+
+/* ---------- Item case study ---------- */
+(function renderItem(){
+  const d = DATA.example_item;
+  const meta = document.getElementById('item-meta');
+  meta.innerHTML = `
+    <div class="pname">${d.product_name}</div>
+    <dl>
+      <dt>Store</dt><dd>${d.store}</dd>
+      <dt>Item ID</dt><dd>${d.item_id}</dd>
+      <dt>Shelf life</dt><dd>${d.shelf_life_days} days</dd>
+    </dl>
+    <div class="tier-pill">${d.shelf_life_tier} tier</div>
+    <div class="barcode-strip">
+      <svg id="barcode-svg"></svg>
+    </div>
+  `;
+
+  if(window.JsBarcode){
+    const barcodeInk = getComputedStyle(document.body).getPropertyValue('--text-primary').trim() || '#152019';
+    JsBarcode("#barcode-svg", d.barcode, {
+      format: "EAN13", width: 1.6, height: 34, fontSize: 12,
+      font: "IBM Plex Mono", textMargin: 4, margin: 0,
+      lineColor: barcodeInk, background: "transparent",
+    });
+  }
+
+  const series = d.series;
+  const svg = document.getElementById('item-chart');
+  const tooltip = document.getElementById('item-tooltip');
+  const wrap = document.getElementById('item-chart-wrap');
+
+  function draw(){
+    const W = wrap.clientWidth, H = 260;
+    const padL = 34, padR = 10, padT = 14, padB = 26;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const maxQty = Math.max(...series.map(s => s.qty), 1);
+    const n = series.length;
+    const x = i => padL + (i/(n-1)) * plotW;
+    const y = q => padT + plotH - (q/maxQty)*plotH;
+
+    // discount bands (price_ratio < 0.85)
+    let bands = [];
+    let bandStart = null;
+    series.forEach((s,i) => {
+      const isDisc = s.price_ratio < 0.85;
+      if(isDisc && bandStart === null) bandStart = i;
+      if(!isDisc && bandStart !== null){ bands.push([bandStart, i-1]); bandStart = null; }
+    });
+    if(bandStart !== null) bands.push([bandStart, n-1]);
+
+    const bandRects = bands.map(([s,e]) => {
+      const x1 = x(s), x2 = x(e);
+      return `<rect x="${x1}" y="${padT}" width="${Math.max(x2-x1,2)}" height="${plotH}" fill="var(--highlight-wash)"></rect>`;
+    }).join('');
+
+    const points = series.map((s,i) => `${x(i)},${y(s.qty)}`).join(' ');
+
+    // y-axis ticks (0, mid, max)
+    const ticks = [0, Math.round(maxQty/2), maxQty];
+    const tickLines = ticks.map(t => `
+      <line x1="${padL}" y1="${y(t)}" x2="${W-padR}" y2="${y(t)}" stroke="var(--grid)" stroke-width="1"></line>
+      <text x="${padL-8}" y="${y(t)+4}" text-anchor="end" font-size="11" fill="var(--text-muted)" font-family="IBM Plex Mono, monospace">${t}</text>
+    `).join('');
+
+    // x-axis labels (first, mid, last date)
+    const xTickIdx = [0, Math.floor(n/2), n-1];
+    const xTicks = xTickIdx.map(i => `
+      <text x="${x(i)}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--text-muted)" font-family="IBM Plex Mono, monospace">${series[i].date}</text>
+    `).join('');
+
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = `
+      ${bandRects}
+      ${tickLines}
+      <polyline points="${points}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline>
+      ${xTicks}
+      <rect id="hover-capture" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent"></rect>
+    `;
+
+    const capture = svg.querySelector('#hover-capture');
+    capture.addEventListener('mousemove', (e) => {
+      const rect = svg.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) * (W / rect.width);
+      const idx = Math.round(((mx - padL) / plotW) * (n-1));
+      const clamped = Math.max(0, Math.min(n-1, idx));
+      const s = series[clamped];
+      tooltip.innerHTML = `${s.date}<br>${s.qty} units &middot; ${(s.price_ratio*100).toFixed(0)}% of full price`;
+      tooltip.style.left = (x(clamped)) + 'px';
+      tooltip.style.top = (y(s.qty)) + 'px';
+      tooltip.classList.add('visible');
+    });
+    capture.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+  }
+  draw();
+  window.addEventListener('resize', draw);
+})();
+
+/* ---------- Forecast accuracy ---------- */
+(function renderForecast(){
+  const m = DATA.metrics;
+  const grid = document.getElementById('metric-grid');
+  const cards = [
+    {name:'MAE (avg units off/day)', model:m.model_mae, naive:m.naive_lag7_mae, max:m.naive_lag7_mae, improve:m.mae_improvement_pct},
+    {name:'RMSE', model:m.model_rmse, naive:m.naive_lag7_rmse, max:m.naive_lag7_rmse, improve:m.rmse_improvement_pct},
+    {name:'R² (variance explained)', model:m.r2, naive:m.naive_r2, max:1, improve:null, isR2:true},
+    {name:'WMAPE', model:m.wmape_pct, naive:m.naive_wmape_pct, max:m.naive_wmape_pct, improve:null, isPct:true},
+  ];
+  grid.innerHTML = cards.map(c => {
+    const modelPct = (c.model / c.max * 100).toFixed(1);
+    const naivePct = (c.naive / c.max * 100).toFixed(1);
+    const modelDisp = c.isPct ? pct(c.model) : (c.isR2 ? fmt(c.model,2) : fmt(c.model,2));
+    const naiveDisp = c.isPct ? pct(c.naive) : (c.isR2 ? fmt(c.naive,2) : fmt(c.naive,2));
+    return `
+      <div class="metric-card">
+        <div class="m-name">${c.name}</div>
+        <div class="metric-bar-row">
+          <div class="mb-label">Model</div>
+          <div class="mb-track"><div class="mb-fill model" style="width:${modelPct}%"></div></div>
+          <div class="mb-val">${modelDisp}</div>
+        </div>
+        <div class="metric-bar-row">
+          <div class="mb-label">Naive</div>
+          <div class="mb-track"><div class="mb-fill naive" style="width:${naivePct}%"></div></div>
+          <div class="mb-val">${naiveDisp}</div>
+        </div>
+        ${c.improve !== null ? `<div class="improve-tag">${c.improve > 0 ? '↓' : '↑'} ${Math.abs(c.improve)}% vs naive</div>` : ''}
+      </div>`;
+  }).join('');
+})();
+</script>
