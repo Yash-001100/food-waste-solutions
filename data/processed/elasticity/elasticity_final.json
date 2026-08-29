@@ -1,0 +1,105 @@
+{
+  "fallback_elasticity": -0.9424,
+  "by_store": {
+    "CA_1": {
+      "elasticity": -1.665,
+      "se": 0.0573,
+      "p_value": 0.0,
+      "n_obs": 536001,
+      "n_discounted_obs": 15408,
+      "r_squared": 0.0215,
+      "used_elasticity": -1.665,
+      "source": "store_specific"
+    },
+    "CA_2": {
+      "elasticity": -0.2989,
+      "se": 0.0435,
+      "p_value": 0.0,
+      "n_obs": 536001,
+      "n_discounted_obs": 15280,
+      "r_squared": 0.0378,
+      "used_elasticity": -0.2989,
+      "source": "store_specific"
+    },
+    "CA_3": {
+      "elasticity": 2.2652,
+      "se": 0.0252,
+      "p_value": 0.0,
+      "n_obs": 536001,
+      "n_discounted_obs": 41739,
+      "r_squared": 0.0487,
+      "used_elasticity": -0.9424,
+      "source": "pooled_fallback"
+    },
+    "CA_4": {
+      "elasticity": -0.8511,
+      "se": 0.0381,
+      "p_value": 0.0,
+      "n_obs": 536001,
+      "n_discounted_obs": 15160,
+      "r_squared": 0.0081,
+      "used_elasticity": -0.8511,
+      "source": "store_specific"
+    },
+    "TX_1": {
+      "elasticity": -0.1012,
+      "se": 0.0236,
+      "p_value": 1.9e-05,
+      "n_obs": 536001,
+      "n_discounted_obs": 14218,
+      "r_squared": 0.0102,
+      "used_elasticity": -0.1012,
+      "source": "store_specific"
+    },
+    "TX_2": {
+      "elasticity": 0.0053,
+      "se": 0.015,
+      "p_value": 0.721561,
+      "n_obs": 536001,
+      "n_discounted_obs": 14703,
+      "r_squared": 0.0105,
+      "used_elasticity": -0.9424,
+      "source": "pooled_fallback"
+    },
+    "TX_3": {
+      "elasticity": -0.135,
+      "se": 0.0226,
+      "p_value": 0.0,
+      "n_obs": 536001,
+      "n_discounted_obs": 14874,
+      "r_squared": 0.0089,
+      "used_elasticity": -0.135,
+      "source": "store_specific"
+    },
+    "WI_1": {
+      "elasticity": -1.2015,
+      "se": 0.0499,
+      "p_value": 0.0,
+      "n_obs": 536001,
+      "n_discounted_obs": 16373,
+      "r_squared": 0.0228,
+      "used_elasticity": -1.2015,
+      "source": "store_specific"
+    },
+    "WI_2": {
+      "elasticity": -1.0337,
+      "se": 0.1844,
+      "p_value": 0.0,
+      "n_obs": 536001,
+      "n_discounted_obs": 16922,
+      "r_squared": 0.0256,
+      "used_elasticity": -1.0337,
+      "source": "store_specific"
+    },
+    "WI_3": {
+      "elasticity": -1.1557,
+      "se": 0.0451,
+      "p_value": 0.0,
+      "n_obs": 536001,
+      "n_discounted_obs": 16646,
+      "r_squared": 0.0225,
+      "used_elasticity": -1.1557,
+      "source": "store_specific"
+    }
+  }
+}
