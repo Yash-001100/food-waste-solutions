@@ -8,5 +8,11 @@
   "best_iteration": 403,
   "n_train_rows": 4957650,
   "n_valid_rows": 402360,
-  "valid_days": 28
+  "valid_days": 28,
+  "r2": 0.7536,
+  "naive_r2": 0.5166,
+  "mape_pct_nonzero_days": 53.8,
+  "wmape_pct": 61.1,
+  "naive_wmape_pct": 79.0,
+  "pct_of_days_with_zero_sales": 47.4
 }
