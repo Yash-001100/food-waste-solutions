@@ -1,0 +1,12 @@
+{
+  "model_mae": 1.2003,
+  "model_rmse": 2.3067,
+  "naive_lag7_mae": 1.5533,
+  "naive_lag7_rmse": 3.2311,
+  "mae_improvement_pct": 22.7,
+  "rmse_improvement_pct": 28.6,
+  "best_iteration": 403,
+  "n_train_rows": 4957650,
+  "n_valid_rows": 402360,
+  "valid_days": 28
+}
