@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+data/raw/*.csv
+data/processed/*.parquet
+*.ipynb_checkpoints/
+node_modules/
+.next/
+.env
+.env.local
+*.log
+.DS_Store
