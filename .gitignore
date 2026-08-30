@@ -12,4 +12,4 @@ node_modules/
 *.log
 .DS_Store
 backend/app/models/*.txt
-backend/app.duckdb
+backend/app.duckdb*
