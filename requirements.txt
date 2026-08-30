@@ -9,3 +9,6 @@ pydantic>=2.0
 matplotlib>=3.8
 seaborn>=0.13
 pyarrow>=15.0
+python-jose[cryptography]>=3.3
+passlib[bcrypt]>=1.7
+python-multipart>=0.0.9
