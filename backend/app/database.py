@@ -23,18 +23,35 @@ ROOT = Path(__file__).resolve().parents[2]
 PROC = ROOT / "data" / "processed"
 DB_PATH = ROOT / "backend" / "app.duckdb"
 
-_con = None
+_base_con = None
 
 
 def get_connection():
-    """Single shared DuckDB connection for the app's lifetime (DuckDB is
-    single-process; FastAPI here runs with one worker, so this is safe)."""
-    global _con
-    if _con is None:
-        _con = duckdb.connect(str(DB_PATH))
-        _init_schema(_con)
-        _register_views(_con)
-    return _con
+    """
+    Returns a DuckDB handle safe for the calling request to use on its own.
+
+    FastAPI runs each sync endpoint in its own worker thread, and the
+    frontend routinely fires more than one request at once (the risk board
+    page loads the store summary and the item list in parallel). A single
+    duckdb.Connection is NOT safe to use concurrently from multiple threads -
+    queries interleave on the same cursor state, and one request can get
+    back another request's (or a mix of two requests') rows. This surfaced
+    during frontend integration testing as `/stores/{store}` intermittently
+    returning garbled data (once literally an item_id where a row count was
+    expected) under concurrent load - a real bug, not a fluke.
+
+    The fix is DuckDB's documented pattern for this: keep ONE base
+    connection for the process (schema + parquet views are set up on it
+    once), and hand out a fresh `.cursor()` per call. A cursor is cheap
+    (shares the same underlying database, no data is re-read) and is
+    independently safe to use from a different thread.
+    """
+    global _base_con
+    if _base_con is None:
+        _base_con = duckdb.connect(str(DB_PATH))
+        _init_schema(_base_con)
+        _register_views(_base_con)
+    return _base_con.cursor()
 
 
 def _init_schema(con):

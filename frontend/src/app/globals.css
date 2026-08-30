@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/*
+  Design tokens - shares its type & color identity with the "Markdown Math"
+  results dashboard (docs/markdown-math.html) so the two pieces of this
+  project read as one system: Big Shoulders Display for headings, Source
+  Sans 3 for body text, IBM Plex Mono for data/figures. Status colors map
+  directly onto the four risk tiers from Task #7 (Low/Medium/High/Critical),
+  reusing the dataviz skill's fixed status palette rather than inventing one.
+*/
+:root {
+  color-scheme: light;
+  --surface-page: #f9f9f7;
+  --surface-card: #fcfcfb;
+  --surface-card-hover: #f3f2ee;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: #e1e0d9;
+  --accent: #2a78d6;
+  --accent-soft: #cde2fb;
+
+  --risk-low: #0ca30c;
+  --risk-medium: #fab219;
+  --risk-high: #ec835a;
+  --risk-critical: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-page: #0d0d0d;
+    --surface-card: #1a1a19;
+    --surface-card-hover: #232321;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: #2c2c2a;
+    --accent: #3987e5;
+    --accent-soft: #184f95;
+
+    --risk-low: #0ca30c;
+    --risk-medium: #fab219;
+    --risk-high: #ec835a;
+    --risk-critical: #d03b3b;
+  }
+}
+
+@theme inline {
+  --color-surface-page: var(--surface-page);
+  --color-surface-card: var(--surface-card);
+  --color-surface-card-hover: var(--surface-card-hover);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-risk-low: var(--risk-low);
+  --color-risk-medium: var(--risk-medium);
+  --color-risk-high: var(--risk-high);
+  --color-risk-critical: var(--risk-critical);
+  --font-display: "Big Shoulders Display", system-ui, sans-serif;
+  --font-sans: "Source Sans 3", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  background: var(--surface-page);
+}
+
+body {
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
