@@ -78,6 +78,28 @@ def _init_schema(con):
             status      VARCHAR NOT NULL DEFAULT 'applied'
         )
     """)
+    # Migration: value_saved was added after the table above first shipped.
+    # `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` looks like the obvious way to
+    # keep this safe against an already-populated app.duckdb, but DuckDB
+    # 1.5.5 has a WAL-replay bug on exactly that statement: if the process
+    # exits before its next checkpoint, reopening the database replays the
+    # WAL and crashes with an internal "GetDefaultDatabase with no default
+    # database set" error - reproduced directly while building this feature.
+    # Checking the column's existence in Python first and issuing a plain
+    # `ADD COLUMN` (no `IF NOT EXISTS`) only when needed avoids the buggy
+    # code path entirely.
+    existing_cols = {r[1] for r in con.execute("PRAGMA table_info('applied_actions')").fetchall()}
+    if "value_saved" not in existing_cols:
+        con.execute("ALTER TABLE applied_actions ADD COLUMN value_saved DOUBLE")
+        # Flush the ALTER to the main database file immediately instead of
+        # leaving it sitting in the WAL for the rest of the process's life -
+        # that's the window where the replay bug above gets hit (an unclean
+        # kill/crash any time before the next natural checkpoint). This
+        # doesn't close the window to zero (a kill in the split second
+        # between the ALTER and this CHECKPOINT is still theoretically
+        # possible), but it shrinks it from "indefinite" to "sub-second,"
+        # which is an acceptable, disclosed trade-off for a demo-scale app.
+        con.execute("CHECKPOINT")
 
 
 def _register_views(con):

@@ -29,7 +29,8 @@ export default function TransfersPage() {
         <p className="text-sm text-text-muted font-mono">{store}</p>
         <h1 className="font-display text-4xl font-800 tracking-tight">Transfer candidates</h1>
         <p className="mt-1 text-text-secondary">
-          Critical items here that discounting can&apos;t clear, where another store is genuinely thin on the same item.
+          Critical items here that discounting can&apos;t clear, where a sister store sells through this item
+          noticeably faster and could use the stock before it expires here.
         </p>
       </div>
 
@@ -45,6 +46,12 @@ export default function TransfersPage() {
             <p className="font-medium">{t.product_name}</p>
             <p className="font-mono text-xs text-text-muted">{t.barcode}</p>
             <p className="mt-2 text-sm text-text-secondary">{t.transfer_detail}</p>
+            {t.transfer_to_store && t.transfer_to_current_stock != null && (
+              <p className="mt-1 text-xs text-text-muted">
+                {t.transfer_to_store} holds {t.transfer_to_current_stock.toLocaleString()} units
+                {t.transfer_to_daily_demand != null && ` against ~${t.transfer_to_daily_demand}/day of its own demand`}
+              </p>
+            )}
             <p className="mt-2 font-mono text-xs text-text-muted">
               {t.current_stock.toLocaleString()} units on hand · {formatUSD(t.full_price)} each
             </p>

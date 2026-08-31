@@ -15,6 +15,7 @@ export default function StoreRiskBoard() {
   const [summary, setSummary] = useState<StoreSummary | null>(null);
   const [items, setItems] = useState<ItemSummary[] | null>(null);
   const [filter, setFilter] = useState<RiskTier | null>(null);
+  const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
@@ -32,8 +33,13 @@ export default function StoreRiskBoard() {
       .catch(() => setError("Couldn't load items for this store."));
   }, [store, filter]);
 
-  const totalPages = items ? Math.max(1, Math.ceil(items.length / PAGE_SIZE)) : 1;
-  const pageItems = items ? items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : null;
+  const q = search.trim().toLowerCase();
+  const filteredItems = items && q
+    ? items.filter((i) => i.product_name.toLowerCase().includes(q) || i.barcode.includes(q))
+    : items;
+
+  const totalPages = filteredItems ? Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE)) : 1;
+  const pageItems = filteredItems ? filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : null;
 
   return (
     <div className="space-y-6">
@@ -48,7 +54,8 @@ export default function StoreRiskBoard() {
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={() => setFilter(null)}
           className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
@@ -73,6 +80,17 @@ export default function StoreRiskBoard() {
             </button>
           );
         })}
+        </div>
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Search barcode or name..."
+          className="w-full rounded-md border border-border-strong bg-surface-card px-3 py-1.5 text-sm placeholder:text-text-muted focus:border-accent focus:outline-none sm:w-64"
+        />
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border-strong bg-surface-card">
@@ -111,14 +129,14 @@ export default function StoreRiskBoard() {
             ))}
           </tbody>
         </table>
-        {items && items.length === 0 && (
+        {filteredItems && filteredItems.length === 0 && (
           <p className="p-6 text-center text-sm text-text-muted">No items match this filter.</p>
         )}
         {!items && !error && <p className="p-6 text-center text-sm text-text-muted font-mono">Loading...</p>}
       </div>
 
-      {items && (
-        <Pagination page={page} totalPages={totalPages} totalCount={items.length} pageSize={PAGE_SIZE} onChange={setPage} />
+      {filteredItems && (
+        <Pagination page={page} totalPages={totalPages} totalCount={filteredItems.length} pageSize={PAGE_SIZE} onChange={setPage} />
       )}
     </div>
   );

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WasteGuard AI - Risk Board</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-surface": "#303032",
+                    "on-primary-fixed-variant": "#38485a",
+                    "error-container": "#ffdad6",
+                    "primary-container": "#1a2b3c",
+                    "tertiary": "#221200",
+                    "on-tertiary-fixed-variant": "#653e00",
+                    "outline-variant": "#c4c6cd",
+                    "surface-container-low": "#f5f3f4",
+                    "on-primary-container": "#8192a7",
+                    "inverse-primary": "#b7c8de",
+                    "on-primary-fixed": "#0b1d2d",
+                    "tertiary-fixed": "#ffddb8",
+                    "surface-bright": "#fbf9fa",
+                    "surface-container": "#efedef",
+                    "on-secondary-container": "#00714d",
+                    "on-error-container": "#93000a",
+                    "on-error": "#ffffff",
+                    "on-surface-variant": "#44474c",
+                    "secondary-fixed": "#6ffbbe",
+                    "error": "#ba1a1a",
+                    "primary-fixed-dim": "#b7c8de",
+                    "primary-fixed": "#d2e4fb",
+                    "secondary-fixed-dim": "#4edea3",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "outline": "#74777d",
+                    "on-secondary": "#ffffff",
+                    "tertiary-container": "#3e2400",
+                    "on-tertiary": "#ffffff",
+                    "surface-variant": "#e4e2e3",
+                    "inverse-on-surface": "#f2f0f2",
+                    "on-background": "#1b1c1d",
+                    "background": "#fbf9fa",
+                    "on-surface": "#1b1c1d",
+                    "on-tertiary-fixed": "#2a1700",
+                    "surface-dim": "#dbd9db",
+                    "surface": "#fbf9fa",
+                    "tertiary-fixed-dim": "#ffb95f",
+                    "surface-container-highest": "#e4e2e3",
+                    "surface-container-high": "#e9e7e9",
+                    "on-secondary-fixed": "#002113",
+                    "secondary-container": "#6cf8bb",
+                    "surface-tint": "#4f6073",
+                    "on-tertiary-container": "#ca8100",
+                    "secondary": "#006c49",
+                    "on-secondary-fixed-variant": "#005236",
+                    "primary": "#041627"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack_gap_md": "16px",
+                    "container_max_width": "1440px",
+                    "base_unit": "8px",
+                    "gutter": "24px",
+                    "margin_desktop": "32px",
+                    "stack_gap_sm": "8px",
+                    "margin_mobile": "16px",
+                    "stack_gap_lg": "24px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Inter", "sans-serif"],
+                    "label-caps": ["Inter", "sans-serif"],
+                    "display-lg-mobile": ["Inter", "sans-serif"],
+                    "body-base": ["Inter", "sans-serif"],
+                    "data-mono": ["Inter", "monospace"],
+                    "headline-md": ["Inter", "sans-serif"],
+                    "body-sm": ["Inter", "sans-serif"]
+            },
+            "fontSize": {
+                    "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                    "display-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                    "data-mono": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                    "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                    "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-base text-body-base h-screen overflow-hidden flex antialiased">
+<!-- SideNavBar -->
+<nav class="bg-surface-container dark:bg-surface-container-low border-r border-outline-variant dark:border-outline docked full-height left-0 w-64 fixed left-0 top-0 h-full flex flex-col py-margin_desktop z-40 flat no shadows">
+<!-- Brand Header -->
+<div class="px-gutter mb-stack_gap_lg">
+<h1 class="font-display-lg text-display-lg font-black text-primary dark:text-primary-fixed">WasteGuard AI</h1>
+</div>
+<!-- User Profile Header -->
+<div class="px-gutter flex items-center gap-stack_gap_sm mb-stack_gap_lg">
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">CA_2</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Store Associate</div>
+</div>
+</div>
+<!-- CTA Button -->
+<div class="px-gutter mb-stack_gap_lg">
+<button class="w-full bg-primary text-on-primary rounded-lg py-2 px-4 font-data-mono text-data-mono hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-base">add</span>
+                New Log Entry
+            </button>
+</div>
+<!-- Navigation Tabs -->
+<div class="flex-1 flex flex-col gap-1 px-base_unit">
+<!-- Inactive: Overview -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline-variant font-label-caps text-label-caps hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Overview
+            </a>
+<!-- Active: Risk Board -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary dark:text-secondary-fixed-dim font-bold bg-secondary-container/20 font-label-caps text-label-caps hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="warning" data-weight="fill" style="font-variation-settings: 'FILL' 1;">warning</span>
+                Risk Board
+            </a>
+<!-- Inactive: Transfers -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline-variant font-label-caps text-label-caps hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="swap_horiz">swap_horiz</span>
+                Transfers
+            </a>
+<!-- Inactive: History -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline-variant font-label-caps text-label-caps hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+                History
+            </a>
+</div>
+<!-- Footer Tabs -->
+<div class="mt-auto flex flex-col gap-1 px-base_unit">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline-variant font-label-caps text-label-caps hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant dark:text-outline-variant font-label-caps text-label-caps hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                Logout
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-64 flex-1 h-full overflow-y-auto bg-background p-margin_desktop">
+<!-- Page Header -->
+<header class="mb-stack_gap_lg flex justify-between items-end">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1 uppercase tracking-widest">Inventory Management</p>
+<h2 class="font-display-lg text-display-lg text-on-surface">CA_2 - Risk Board</h2>
+</div>
+<!-- Quick Stats/Summary (Bento hint) -->
+<div class="flex gap-stack_gap_md">
+<div class="bg-surface-lowest border border-outline-variant rounded-lg p-3 px-5 flex flex-col items-end">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Items at Risk</span>
+<span class="font-headline-md text-headline-md text-error">12</span>
+</div>
+<div class="bg-surface-lowest border border-outline-variant rounded-lg p-3 px-5 flex flex-col items-end">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Potential Loss</span>
+<span class="font-headline-md text-headline-md text-on-surface">$4,250.00</span>
+</div>
+</div>
+</header>
+<!-- Filters Section -->
+<div class="mb-stack_gap_md flex items-center justify-between bg-surface rounded-lg border border-outline-variant p-4">
+<div class="flex items-center gap-stack_gap_sm">
+<span class="font-data-mono text-data-mono text-on-surface-variant mr-2">Risk Tier:</span>
+<button class="px-4 py-1.5 rounded-full border border-primary bg-primary/5 text-primary font-body-sm text-body-sm transition-colors">All Tiers</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-variant font-body-sm text-body-sm transition-colors">Critical</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-variant font-body-sm text-body-sm transition-colors">High</button>
+<button class="px-4 py-1.5 rounded-full border border-outline-variant text-on-surface-variant hover:bg-surface-variant font-body-sm text-body-sm transition-colors">Medium</button>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="pl-9 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-lg font-body-sm text-body-sm focus:border-primary focus:ring-1 focus:ring-primary outline-none w-64 transition-all" placeholder="Search barcode or name..." type="text"/>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="bg-surface-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant">
+<tr>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant font-semibold sticky top-0 bg-surface-container-low z-10 w-64">Product Name</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant font-semibold sticky top-0 bg-surface-container-low z-10 w-32">Barcode</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant font-semibold sticky top-0 bg-surface-container-low z-10 w-32 text-center">Risk Tier</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant font-semibold sticky top-0 bg-surface-container-low z-10 w-32 text-right">Proj. Sell-through</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant font-semibold sticky top-0 bg-surface-container-low z-10 w-24 text-right">Stock</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant font-semibold sticky top-0 bg-surface-container-low z-10 w-24 text-right">Full Price</th>
+<th class="py-3 px-4 font-label-caps text-label-caps text-on-surface-variant font-semibold sticky top-0 bg-surface-container-low z-10 w-40 text-center">Recommended Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/50">
+<!-- Row 1: Critical -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-4 px-4">
+<div class="font-body-base text-body-base text-on-surface font-medium truncate">Premium Organic Avocados (Bag)</div>
+</td>
+<td class="py-4 px-4 font-data-mono text-data-mono text-on-surface-variant">0421984210</td>
+<td class="py-4 px-4 text-center">
+<span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-caps text-label-caps w-full border border-error/20">Critical</span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="font-data-mono text-data-mono text-error">12%</div>
+</td>
+<td class="py-4 px-4 text-right font-data-mono text-data-mono text-on-surface">45</td>
+<td class="py-4 px-4 text-right font-data-mono text-data-mono text-on-surface-variant">$6.99</td>
+<td class="py-4 px-4 flex justify-center">
+<button class="bg-primary text-on-primary hover:bg-primary/90 font-data-mono text-data-mono text-xs px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'wght' 700;">sell</span>
+                                    Markdown 50%
+                                </button>
+</td>
+</tr>
+<!-- Row 2: Critical -->
+<tr class="hover:bg-surface-bright transition-colors group bg-surface-container-lowest even:bg-surface-container-low/30">
+<td class="py-4 px-4">
+<div class="font-body-base text-body-base text-on-surface font-medium truncate">Artisan Sourdough Loaf</div>
+</td>
+<td class="py-4 px-4 font-data-mono text-data-mono text-on-surface-variant">8810239412</td>
+<td class="py-4 px-4 text-center">
+<span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-caps text-label-caps w-full border border-error/20">Critical</span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="font-data-mono text-data-mono text-error">18%</div>
+</td>
+<td class="py-4 px-4 text-right font-data-mono text-data-mono text-on-surface">12</td>
+<td class="py-4 px-4 text-right font-data-mono text-data-mono text-on-surface-variant">$4.50</td>
+<td class="py-4 px-4 flex justify-center">
+<button class="bg-primary text-on-primary hover:bg-primary/90 font-data-mono text-data-mono text-xs px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'wght' 700;">sell</span>
+                                    Markdown 40%
+                                </button>
+</td>
+</tr>
+<!-- Row 3: High -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-4 px-4">
+<div class="font-body-base text-body-base text-on-surface font-medium truncate">Fresh Cut Fruit Bowl (Large)</div>
+</td>
+<td class="py-4 px-4 font-data-mono text-data-mono text-on-surface-variant">9912034855</td>
+<td class="py-4 px-4 text-center">
+<span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-caps text-label-caps w-full border border-tertiary/20">High</span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="font-data-mono text-data-mono text-tertiary">35%</div>
+</td>
+<td class="py-4 px-4 text-right font-data-mono text-data-mono text-on-surface">28</td>
+<td class="py-4 px-4 text-right font-data-mono text-data-mono text-on-surface-variant">$8.99</td>
+<td class="py-4 px-4 flex justify-center">
+<button class="bg-surface-lowest text-primary border border-primary hover:bg-surface-variant font-data-mono text-data-mono text-xs px-3 py-1.5 rounded flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'wght' 700;">sell</span>
+                                    Markdown 20%
+                                </button>
+</td>
+</tr>
+<!-- Row 4: Medium -->
+<tr class="hover:bg-surface-bright transition-colors group bg-surface-container-lowest even:bg-surface-container-low/30">
+<td class="py-4 px-4">
+<div class="font-body-base text-body-base text-on-surface font-medium truncate">Local Spring Mix Salad</div>
+</td>
+<td class="py-4 px-4 font-data-mono text-data-mono text-on-surface-variant">3301928475</td>
+<td class="py-4 px-4 text-center">
+<span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-caps text-label-caps w-full border border-tertiary/20">Medium</span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="font-data-mono text-data-mono text-tertiary">52%</div>
+</td>
+<td class="py-4 px-4 text-right font-data-mono text-data-mono text-on-surface">65</td>
+<td class="py-4 px-4 text-right font-data-mono text-data-mono text-on-surface-variant">$5.49</td>
+<td class="py-4 px-4 flex justify-center">
+<button class="bg-surface-lowest text-on-surface border border-outline-variant hover:bg-surface-variant font-data-mono text-data-mono text-xs px-3 py-1.5 rounded flex items-center gap-1 transition-colors opacity-70 hover:opacity-100">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'wght' 700;">local_shipping</span>
+                                    Transfer (Store #12)
+                                </button>
+</td>
+</tr>
+<!-- Row 5: Low -->
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="py-4 px-4">
+<div class="font-body-base text-body-base text-on-surface font-medium truncate">Aged Cheddar Block</div>
+</td>
+<td class="py-4 px-4 font-data-mono text-data-mono text-on-surface-variant">1109485732</td>
+<td class="py-4 px-4 text-center">
+<span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps w-full border border-secondary/20">Low</span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="font-data-mono text-data-mono text-secondary">88%</div>
+</td>
+<td class="py-4 px-4 text-right font-data-mono text-data-mono text-on-surface">14</td>
+<td class="py-4 px-4 text-right font-data-mono text-data-mono text-on-surface-variant">$12.99</td>
+<td class="py-4 px-4 flex justify-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant italic">No Action Needed</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="border-t border-outline-variant bg-surface-container-lowest px-4 py-3 flex items-center justify-between">
+<div class="font-body-sm text-body-sm text-on-surface-variant">
+                    Showing <span class="font-semibold text-on-surface">1</span> to <span class="font-semibold text-on-surface">5</span> of <span class="font-semibold text-on-surface">42</span> entries
+                </div>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded bg-primary-container text-on-primary-container font-data-mono text-data-mono flex items-center justify-center">1</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container-high text-on-surface font-data-mono text-data-mono flex items-center justify-center">2</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container-high text-on-surface font-data-mono text-data-mono flex items-center justify-center">3</button>
+<span class="text-on-surface-variant mx-1">...</span>
+<button class="w-8 h-8 rounded hover:bg-surface-container-high text-on-surface font-data-mono text-data-mono flex items-center justify-center">9</button>
+<button class="p-1 rounded hover:bg-surface-container-high text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

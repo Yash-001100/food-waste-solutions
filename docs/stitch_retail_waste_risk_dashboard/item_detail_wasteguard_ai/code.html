@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Item Detail - WasteGuard AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-surface": "#303032",
+                      "on-primary-fixed-variant": "#38485a",
+                      "error-container": "#ffdad6",
+                      "primary-container": "#1a2b3c",
+                      "tertiary": "#221200",
+                      "on-tertiary-fixed-variant": "#653e00",
+                      "outline-variant": "#c4c6cd",
+                      "surface-container-low": "#f5f3f4",
+                      "on-primary-container": "#8192a7",
+                      "inverse-primary": "#b7c8de",
+                      "on-primary-fixed": "#0b1d2d",
+                      "tertiary-fixed": "#ffddb8",
+                      "surface-bright": "#fbf9fa",
+                      "surface-container": "#efedef",
+                      "on-secondary-container": "#00714d",
+                      "on-error-container": "#93000a",
+                      "on-error": "#ffffff",
+                      "on-surface-variant": "#44474c",
+                      "secondary-fixed": "#6ffbbe",
+                      "error": "#ba1a1a",
+                      "primary-fixed-dim": "#b7c8de",
+                      "primary-fixed": "#d2e4fb",
+                      "secondary-fixed-dim": "#4edea3",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "outline": "#74777d",
+                      "on-secondary": "#ffffff",
+                      "tertiary-container": "#3e2400",
+                      "on-tertiary": "#ffffff",
+                      "surface-variant": "#e4e2e3",
+                      "inverse-on-surface": "#f2f0f2",
+                      "on-background": "#1b1c1d",
+                      "background": "#fbf9fa",
+                      "on-surface": "#1b1c1d",
+                      "on-tertiary-fixed": "#2a1700",
+                      "surface-dim": "#dbd9db",
+                      "surface": "#fbf9fa",
+                      "tertiary-fixed-dim": "#ffb95f",
+                      "surface-container-highest": "#e4e2e3",
+                      "surface-container-high": "#e9e7e9",
+                      "on-secondary-fixed": "#002113",
+                      "secondary-container": "#6cf8bb",
+                      "surface-tint": "#4f6073",
+                      "on-tertiary-container": "#ca8100",
+                      "secondary": "#006c49",
+                      "on-secondary-fixed-variant": "#005236",
+                      "primary": "#041627"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack_gap_md": "16px",
+                      "container_max_width": "1440px",
+                      "base_unit": "8px",
+                      "gutter": "24px",
+                      "margin_desktop": "32px",
+                      "stack_gap_sm": "8px",
+                      "margin_mobile": "16px",
+                      "stack_gap_lg": "24px"
+              },
+              "fontFamily": {
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "display-lg-mobile": [
+                              "Inter"
+                      ],
+                      "body-base": [
+                              "Inter"
+                      ],
+                      "data-mono": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "display-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-base": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "data-mono": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        /* Tonal Layering Shadows */
+        .elevation-interactive {
+            box-shadow: 0px 4px 12px 0px rgba(4, 22, 39, 0.04);
+        }
+        
+        /* Grid Lines for Charts */
+        .chart-grid {
+            background-image: linear-gradient(to right, transparent 99%, #efedef 100%),
+                              linear-gradient(to bottom, transparent 99%, #efedef 100%);
+            background-size: 20% 20%;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-base antialiased h-full flex flex-col md:flex-row overflow-hidden">
+<!-- Mobile Top Navigation (Visible on md-) -->
+<header class="md:hidden sticky top-0 z-50 flex justify-between items-center w-full px-margin_mobile py-base_unit bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="inventory_2" data-weight="fill" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-display-lg-mobile text-display-lg-mobile text-primary">WasteGuard AI</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer active:opacity-80" data-icon="notifications">notifications</span>
+</div>
+</header>
+<!-- SideNavBar (Hidden on Mobile) -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full flex-col py-margin_desktop z-40 bg-surface-container border-r border-outline-variant w-64">
+<!-- Brand -->
+<div class="px-6 mb-8 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl" data-icon="inventory_2" data-weight="fill" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-display-lg text-display-lg font-black text-primary">WasteGuard</span>
+</div>
+<!-- Primary Nav Links -->
+<ul class="flex flex-col flex-1 px-4 gap-2">
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-label-caps">Overview</span>
+</li>
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold bg-secondary-container/20 cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="warning" data-weight="fill" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="font-label-caps text-label-caps">Risk Board</span>
+</li>
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="swap_horiz">swap_horiz</span>
+<span class="font-label-caps text-label-caps">Transfers</span>
+</li>
+<li class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-label-caps text-label-caps">History</span>
+</li>
+</ul>
+<!-- Action Button -->
+<div class="px-6 mb-6">
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-on-primary py-3 rounded-lg hover:bg-primary/90 transition-colors cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span class="font-data-mono text-data-mono">New Log Entry</span>
+</button>
+</div>
+<!-- Footer Profile & Nav -->
+<div class="mt-auto px-4 flex flex-col gap-2">
+<div class="border-t border-outline-variant/50 my-2 mx-2"></div>
+<li class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-caps text-label-caps">Settings</span>
+</li>
+<li class="flex items-center gap-3 px-4 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-highest transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-caps text-label-caps">Logout</span>
+</li>
+<div class="flex items-center gap-3 px-4 py-3 mt-2">
+<img class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of a female store associate with dark hair pulled back, wearing a neat navy blue retail uniform polo. The background is a slightly blurred, brightly lit modern grocery store aisle. High quality, crisp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKc0Sf0zlAa5ap5LgFOojJqmfdFIBQ4NQFi4b0CyWuK9lptOuXoT-wvXqhvCYTRgEyqAPUn5vkzKAQuSqEjoK6ie7CllJifNB2rGqVVYViatByIjuoNt8O2v0K-IlwcYn8gwBujzipiOxBn0jgp6DK-IbWpNna50ZymiftaRjVb_NgdKLJn2NVwgVrXfyKcohGxcuqSuffzc8AoUvdLM1CE7vszxQeasP4ESP1pCnsuyVNlgmA2hlu"/>
+<div class="flex flex-col">
+<span class="font-data-mono text-data-mono text-on-surface">CA_2</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Store Associate</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col md:ml-64 w-full h-full overflow-y-auto overflow-x-hidden p-margin_mobile md:p-margin_desktop bg-background">
+<div class="max-w-container_max_width mx-auto w-full flex flex-col gap-gutter">
+<!-- Page Header: Item Context -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-outline-variant pb-stack_gap_md">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 mb-2 cursor-pointer text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_back">arrow_back</span>
+<span class="font-body-sm text-body-sm font-semibold">Back to Risk Board</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-background">Organic Whole Milk, 1 Gallon</h1>
+<div class="flex items-center gap-3 mt-1">
+<span class="bg-surface-container text-on-surface px-2 py-1 rounded font-data-mono text-data-mono text-xs">SKU: 041320000000</span>
+<span class="bg-surface-container text-on-surface px-2 py-1 rounded font-data-mono text-data-mono text-xs">UPC: 4132000000</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<!-- Critical Risk Status Badge -->
+<div class="flex items-center gap-2 bg-error/10 text-error px-4 py-2 rounded-full border border-error/20">
+<span class="material-symbols-outlined" data-icon="error_outline" data-weight="fill" style="font-variation-settings: 'FILL' 1;">error_outline</span>
+<span class="font-data-mono text-data-mono">High Risk (Expiry: 24h)</span>
+</div>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
+<!-- Left Column: Action & Details (5 columns) -->
+<div class="xl:col-span-5 flex flex-col gap-gutter">
+<!-- Recommended Action Card -->
+<div class="bg-surface-lowest border border-outline-variant rounded-xl p-stack_gap_lg flex flex-col hover:elevation-interactive transition-shadow">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="auto_awesome">auto_awesome</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Recommended Action</h2>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 mb-6">
+<h3 class="font-display-lg-mobile text-display-lg-mobile text-on-background mb-2">Apply 50% Markdown</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                                System analysis indicates a high probability of spoilage within 24 hours. Applying a 50% discount immediately maximizes recovery value based on historical store traffic patterns for this time of day.
+                            </p>
+<div class="mt-4 flex flex-col gap-2 border-t border-outline-variant pt-4">
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Current Price</span>
+<span class="font-data-mono text-data-mono line-through text-on-surface-variant">$5.99</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface font-semibold">New Price</span>
+<span class="font-data-mono text-data-mono text-error font-bold">$2.99</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Estimated Recovery</span>
+<span class="font-data-mono text-data-mono text-secondary-fixed-dim">$35.88 (12 units)</span>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary text-on-primary font-headline-md text-headline-md py-4 rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors active:scale-[0.98]">
+<span class="material-symbols-outlined" data-icon="sell" data-weight="fill" style="font-variation-settings: 'FILL' 1;">sell</span>
+                            Apply This Action
+                        </button>
+</div>
+<!-- Item Metadata Card -->
+<div class="bg-surface-lowest border border-outline-variant rounded-xl p-stack_gap_md flex flex-col">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">Item Details</h2>
+<div class="flex flex-col gap-0 divide-y divide-surface-container-highest">
+<div class="flex justify-between py-3">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Category</span>
+<span class="font-data-mono text-data-mono text-on-surface">Dairy / Milk</span>
+</div>
+<div class="flex justify-between py-3">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Vendor</span>
+<span class="font-data-mono text-data-mono text-on-surface">Local Farms Coop</span>
+</div>
+<div class="flex justify-between py-3">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Batch Lot</span>
+<span class="font-data-mono text-data-mono text-on-surface">B-992-X</span>
+</div>
+<div class="flex justify-between py-3">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Shelf Location</span>
+<span class="font-data-mono text-data-mono text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+                                    Aisle 4, Cooler B
+                                </span>
+</div>
+<div class="flex justify-between py-3">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Initial Stock</span>
+<span class="font-data-mono text-data-mono text-on-surface">48 Units</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Data Visualizations (7 columns) -->
+<div class="xl:col-span-7 flex flex-col gap-gutter">
+<!-- Chart 1: Stock Remaining -->
+<div class="bg-surface-lowest border border-outline-variant rounded-xl p-stack_gap_md flex flex-col flex-1 min-h-[300px]">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-md text-headline-md text-on-surface">Stock Remaining vs. Expiry</h2>
+<span class="bg-surface-container px-3 py-1 rounded-full font-label-caps text-label-caps text-on-surface-variant">Last 7 Days</span>
+</div>
+<!-- Pseudo Chart Container -->
+<div class="relative w-full flex-1 flex flex-col items-start justify-end chart-grid border-l border-b border-outline-variant p-4">
+<!-- Y Axis Labels -->
+<div class="absolute left-[-30px] top-0 bottom-0 flex flex-col justify-between font-data-mono text-[10px] text-on-surface-variant">
+<span>48</span>
+<span>36</span>
+<span>24</span>
+<span>12</span>
+<span>0</span>
+</div>
+<!-- X Axis Labels -->
+<div class="absolute left-0 right-0 bottom-[-24px] flex justify-between font-data-mono text-[10px] text-on-surface-variant px-4">
+<span>T-7</span>
+<span>T-5</span>
+<span>T-3</span>
+<span>T-1</span>
+<span>Now</span>
+</div>
+<!-- SVG Line Chart representation -->
+<svg class="absolute inset-0 w-full h-full p-4 overflow-visible" preserveaspectratio="none" viewbox="0 0 100 100">
+<!-- Ideal Burn Down Line -->
+<polyline fill="none" points="0,10 25,30 50,50 75,70 100,90" stroke="#c4c6cd" stroke-dasharray="4" stroke-width="1.5"></polyline>
+<!-- Actual Stock Line (Lagging, creating the problem) -->
+<path d="M0,10 C20,12 40,15 50,30 S80,40 100,75" fill="none" stroke="#041627" stroke-width="3"></path>
+<!-- Critical Threshold Zone -->
+<rect fill="#ffdad6" height="100" opacity="0.3" width="15" x="85" y="0"></rect>
+<!-- Data Points -->
+<circle cx="50" cy="30" fill="#041627" r="4"></circle>
+<circle cx="100" cy="75" fill="#ba1a1a" r="5"></circle> <!-- Current problem state -->
+</svg>
+<!-- Tooltip mockup -->
+<div class="absolute right-[5%] top-[60%] bg-inverse-surface text-on-primary px-3 py-2 rounded text-xs font-data-mono flex flex-col gap-1 z-10 shadow-lg">
+<span>12 Units Left</span>
+<span class="text-error-container">Below ideal trajectory</span>
+</div>
+</div>
+</div>
+<!-- Chart 2: Discount Schedule Ramp -->
+<div class="bg-surface-lowest border border-outline-variant rounded-xl p-stack_gap_md flex flex-col flex-1 min-h-[300px]">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-md text-headline-md text-on-surface">Discount Schedule (Ramp-up)</h2>
+<div class="flex gap-2 items-center">
+<span class="w-3 h-3 rounded-full bg-secondary"></span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Recommended</span>
+</div>
+</div>
+<!-- Pseudo Chart Container -->
+<div class="relative w-full flex-1 flex flex-col items-start justify-end chart-grid border-l border-b border-outline-variant p-4 mt-2">
+<!-- Y Axis Labels (%) -->
+<div class="absolute left-[-35px] top-0 bottom-0 flex flex-col justify-between font-data-mono text-[10px] text-on-surface-variant">
+<span>75%</span>
+<span>50%</span>
+<span>25%</span>
+<span>10%</span>
+<span>0%</span>
+</div>
+<!-- X Axis Labels (Hours to Expiry) -->
+<div class="absolute left-0 right-0 bottom-[-24px] flex justify-between font-data-mono text-[10px] text-on-surface-variant px-4">
+<span>-48h</span>
+<span>-24h</span>
+<span>-12h</span>
+<span>-6h</span>
+<span>0h</span>
+</div>
+<!-- SVG Step Chart representation -->
+<svg class="absolute inset-0 w-full h-full p-4 overflow-visible" preserveaspectratio="none" viewbox="0 0 100 100">
+<!-- Step Line -->
+<path d="M0,90 L25,90 L25,75 L50,75 L50,50 L75,50 L75,25 L100,25" fill="none" stroke="#006c49" stroke-width="3"></path>
+<!-- Area under curve -->
+<path d="M0,90 L25,90 L25,75 L50,75 L50,50 L75,50 L75,25 L100,25 L100,100 L0,100 Z" fill="#6cf8bb" opacity="0.1"></path>
+<!-- Current Recommended Point Indicator -->
+<circle class="animate-pulse" cx="50" cy="50" fill="#006c49" r="5"></circle>
+</svg>
+<!-- Current State Callout -->
+<div class="absolute left-[45%] top-[30%] bg-surface border border-secondary text-secondary px-3 py-1 rounded-full text-xs font-data-mono z-10 shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="arrow_drop_down">arrow_drop_down</span>
+                                50% Mark
+                             </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

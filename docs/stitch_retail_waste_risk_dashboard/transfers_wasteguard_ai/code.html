@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transfers - WasteGuard AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-surface": "#303032",
+                        "on-primary-fixed-variant": "#38485a",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#1a2b3c",
+                        "tertiary": "#221200",
+                        "on-tertiary-fixed-variant": "#653e00",
+                        "outline-variant": "#c4c6cd",
+                        "surface-container-low": "#f5f3f4",
+                        "on-primary-container": "#8192a7",
+                        "inverse-primary": "#b7c8de",
+                        "on-primary-fixed": "#0b1d2d",
+                        "tertiary-fixed": "#ffddb8",
+                        "surface-bright": "#fbf9fa",
+                        "surface-container": "#efedef",
+                        "on-secondary-container": "#00714d",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#44474c",
+                        "secondary-fixed": "#6ffbbe",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#b7c8de",
+                        "primary-fixed": "#d2e4fb",
+                        "secondary-fixed-dim": "#4edea3",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "outline": "#74777d",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#3e2400",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#e4e2e3",
+                        "inverse-on-surface": "#f2f0f2",
+                        "on-background": "#1b1c1d",
+                        "background": "#fbf9fa",
+                        "on-surface": "#1b1c1d",
+                        "on-tertiary-fixed": "#2a1700",
+                        "surface-dim": "#dbd9db",
+                        "surface": "#fbf9fa",
+                        "tertiary-fixed-dim": "#ffb95f",
+                        "surface-container-highest": "#e4e2e3",
+                        "surface-container-high": "#e9e7e9",
+                        "on-secondary-fixed": "#002113",
+                        "secondary-container": "#6cf8bb",
+                        "surface-tint": "#4f6073",
+                        "on-tertiary-container": "#ca8100",
+                        "secondary": "#006c49",
+                        "on-secondary-fixed-variant": "#005236",
+                        "primary": "#041627"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack_gap_md": "16px",
+                        "container_max_width": "1440px",
+                        "base_unit": "8px",
+                        "gutter": "24px",
+                        "margin_desktop": "32px",
+                        "stack_gap_sm": "8px",
+                        "margin_mobile": "16px",
+                        "stack_gap_lg": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "display-lg-mobile": ["Inter"],
+                        "body-base": ["Inter"],
+                        "data-mono": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "display-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-base": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "data-mono": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #fbf9fa; color: #1b1c1d; }
+    </style>
+</head>
+<body class="bg-background flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full flex flex-col py-margin_desktop z-40 bg-surface-container dark:bg-surface-container-low border-r border-outline-variant dark:border-outline docked full-height left-0 w-64">
+<div class="px-gutter mb-8">
+<h1 class="font-display-lg text-display-lg font-black text-primary dark:text-primary-fixed">WasteGuard AI</h1>
+</div>
+<div class="px-gutter mb-stack_gap_lg flex items-center gap-4">
+<img class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of a retail store associate wearing a clean, modern uniform. The associate looks alert and friendly. The background is slightly blurred showing a high-end retail environment. Soft, even lighting highlights the subject's features. The overall mood is authoritative yet approachable, fitting a corporate retail setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqnhsXWQBjjQescmyl7kXYpDE5AG2N_3uFp5N2-1NOCT3iHLA-JyY_W93Gb9FJ_mt2jBqM3jkfGuDpVr37RoNwPGj0_5mcChJyBOTbQBWAD2WdbOZJ_nItJ6S7Oy785t9k7p0PMwD7sMjV4ET2DNZP01nDndZ5XxEjQxo1M04PnryEBv58GyoczSq9LOS1eGDL1EPQuDUQqyC6xcx-zOSNWw-riiytUpBF-79mAdmDdfkPKfgbHoXj"/>
+<div>
+<p class="font-data-mono text-data-mono text-on-surface">CA_2</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Store Associate</p>
+</div>
+</div>
+<div class="px-gutter mb-stack_gap_lg">
+<button class="w-full bg-primary text-on-primary py-2 px-4 rounded font-data-mono text-data-mono hover:bg-primary/90 transition-colors cursor-pointer active:scale-95 duration-150">
+                New Log Entry
+            </button>
+</div>
+<nav class="flex-1 px-4 space-y-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-label-caps">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+<span class="font-label-caps text-label-caps">Risk Board</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-primary dark:text-secondary-fixed-dim font-bold bg-secondary-container/20 hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="swap_horiz">swap_horiz</span>
+<span class="font-label-caps text-label-caps">Transfers</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-label-caps text-label-caps">History</span>
+</a>
+</nav>
+<div class="mt-auto px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-caps text-label-caps">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-surface-container-high transition-all cursor-pointer active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-caps text-label-caps">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-64 flex flex-col h-full bg-surface">
+<!-- Top App Bar (Contextual actions for main canvas) -->
+<header class="sticky top-0 z-50 flex justify-between items-center w-full px-margin_desktop py-base_unit bg-surface dark:bg-inverse-surface border-b border-outline-variant dark:border-outline">
+<div class="flex items-center gap-4">
+<h2 class="font-headline-md text-headline-md text-on-surface">Transfer Opportunities</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">help</span>
+</div>
+<div class="font-data-mono text-data-mono text-on-surface-variant border-l border-outline-variant pl-4">
+                    Store: CA_2
+                </div>
+</div>
+</header>
+<!-- Main Scrollable Area -->
+<div class="flex-1 overflow-y-auto p-margin_desktop space-y-stack_gap_lg">
+<!-- Filters & Controls (Placeholder for typical list view tools) -->
+<div class="flex justify-between items-center bg-surface-container-lowest p-4 rounded border border-outline-variant">
+<div class="flex gap-4">
+<button class="px-4 py-1.5 border border-primary text-primary rounded font-body-sm text-body-sm hover:bg-surface-container-lowest transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-size: 18px;">filter_alt</span> Filter
+                    </button>
+<button class="px-4 py-1.5 border border-outline-variant text-on-surface-variant rounded font-body-sm text-body-sm hover:bg-surface-container transition-colors">
+                        Sort by: Risk Tier
+                    </button>
+</div>
+<div class="text-on-surface-variant font-body-sm text-body-sm">
+                     Showing 3 Critical Opportunities
+                 </div>
+</div>
+<!-- Transfer Items List -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded overflow-hidden">
+<!-- Table Header -->
+<div class="grid grid-cols-12 gap-4 px-6 py-3 border-b border-outline-variant bg-surface-container-low font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+<div class="col-span-4">Item Name / SKU</div>
+<div class="col-span-2 text-center">Risk Tier</div>
+<div class="col-span-2 text-right">Current Stock</div>
+<div class="col-span-3">Sister Store Request</div>
+<div class="col-span-1"></div>
+</div>
+<!-- Item 1 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-outline-variant items-center hover:bg-surface-container-lowest/50 transition-colors">
+<div class="col-span-4 flex items-center gap-4">
+<img class="w-12 h-12 rounded object-cover border border-outline-variant" data-alt="A clean, isolated product shot of a premium organic avocado. The lighting is bright and studio-quality, emphasizing the fresh green color and textured skin. The background is pure white to ensure the product stands out clearly. This image is used in a high-end grocery retail inventory system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQ5KUy6U3M9CtI_0es2RgXzZmmBLnLMzVDjqpEZeGEo9mjk8xp4QM1f_FVvIfYQI_flrMVlUIgbVbYg_9vWcGQ_k17c6_qnUnw6dq2W8WcJOqXyIljQhls98ATHhoFKGLLgVBK87pyXh1YdJ1eabNn1OpVjd96LpMoMzPoaC1IsRTYm8k7K7XGpe8DHDQvZNpLGx1I6QhymRsbV8ObPQGKA4qPGCodBwvVzPF_NREDNs57EY9cf9tC"/>
+<div>
+<p class="font-data-mono text-data-mono text-on-surface">Organic Hass Avocados (Bulk)</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">SKU: 104-882-99</p>
+</div>
+</div>
+<div class="col-span-2 flex justify-center">
+<span class="bg-error/10 text-error px-3 py-1 rounded font-label-caps text-label-caps flex items-center gap-1">
+<span class="material-symbols-outlined" style="font-size: 14px;">warning</span> Critical
+                        </span>
+</div>
+<div class="col-span-2 text-right font-data-mono text-data-mono text-on-surface">
+                        45 Units <span class="block font-body-sm text-body-sm text-error">Expires in 2 days</span>
+</div>
+<div class="col-span-3">
+<p class="font-data-mono text-data-mono text-on-surface">WI_1</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Current Stock: 2 Units (Needs 20)</p>
+</div>
+<div class="col-span-1 flex justify-end">
+<button class="bg-primary text-on-primary p-2 rounded hover:bg-primary/90 transition-colors shadow-sm active:scale-95" title="Request Transfer">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="grid grid-cols-12 gap-4 px-6 py-4 border-b border-outline-variant items-center bg-surface-container-low/30 hover:bg-surface-container-lowest/50 transition-colors">
+<div class="col-span-4 flex items-center gap-4">
+<div class="w-12 h-12 rounded bg-surface-container border border-outline-variant flex items-center justify-center text-outline">
+<span class="material-symbols-outlined">inventory_2</span>
+</div>
+<div>
+<p class="font-data-mono text-data-mono text-on-surface">Artisan Sourdough Loaf</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">SKU: 301-442-11</p>
+</div>
+</div>
+<div class="col-span-2 flex justify-center">
+<span class="bg-error/10 text-error px-3 py-1 rounded font-label-caps text-label-caps flex items-center gap-1">
+<span class="material-symbols-outlined" style="font-size: 14px;">warning</span> Critical
+                        </span>
+</div>
+<div class="col-span-2 text-right font-data-mono text-data-mono text-on-surface">
+                        18 Units <span class="block font-body-sm text-body-sm text-error">Expires EOD</span>
+</div>
+<div class="col-span-3">
+<p class="font-data-mono text-data-mono text-on-surface">TX_2</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Current Stock: 0 Units (Needs 10)</p>
+</div>
+<div class="col-span-1 flex justify-end">
+<button class="bg-primary text-on-primary p-2 rounded hover:bg-primary/90 transition-colors shadow-sm active:scale-95" title="Request Transfer">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

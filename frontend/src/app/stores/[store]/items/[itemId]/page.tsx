@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { api, ItemDetail, ApiError } from "@/lib/api";
+import { api, ItemDetail, ApiError, ActionType } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RiskBadge } from "@/components/RiskBadge";
 import { Barcode } from "@/components/Barcode";
@@ -36,24 +36,30 @@ export default function ItemDetailPage() {
       .catch(() => setError("Item not found."));
   }, [store, params.itemId]);
 
-  async function handleApply() {
+  async function applyActionType(type: ActionType, discount?: number, label?: string) {
     if (!item || !token) return;
     setApplying(true);
     setApplied(null);
-    const { type, discount } = ACTION_TYPE_FROM_LABEL(item.action);
     try {
-      await api.applyAction(token, {
+      const result = await api.applyAction(token, {
         store,
         item_id: item.item_id,
         action_type: type,
         discount_pct: discount,
       });
-      setApplied(`Logged: ${item.action}`);
+      const savedNote = result.value_saved ? ` — est. ${formatUSD(result.value_saved)} recovered` : "";
+      setApplied(`Logged: ${label ?? type}${savedNote}`);
     } catch (err) {
       setApplied(err instanceof ApiError ? `Couldn't apply: ${err.message}` : "Couldn't reach the API.");
     } finally {
       setApplying(false);
     }
+  }
+
+  async function handleApply() {
+    if (!item) return;
+    const { type, discount } = ACTION_TYPE_FROM_LABEL(item.action);
+    await applyActionType(type as ActionType, discount, item.action);
   }
 
   if (error) {
@@ -92,15 +98,32 @@ export default function ItemDetailPage() {
       <div className="rounded-xl border border-border-strong bg-surface-card p-5">
         <p className="text-sm text-text-secondary">Recommended action</p>
         <p className="font-display text-2xl font-700 tracking-tight">{item.action}</p>
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           {canApply ? (
-            <button
-              onClick={handleApply}
-              disabled={applying}
-              className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {applying ? "Applying..." : "Apply this action"}
-            </button>
+            <>
+              <button
+                onClick={handleApply}
+                disabled={applying}
+                className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              >
+                {applying ? "Applying..." : "Apply this action"}
+              </button>
+              <span className="text-xs text-text-muted">or log manually:</span>
+              <button
+                onClick={() => applyActionType("donate", undefined, "Donated")}
+                disabled={applying}
+                className="rounded-md border border-border-strong px-3 py-1.5 text-xs font-semibold uppercase tracking-wide hover:border-accent disabled:opacity-50"
+              >
+                Donate
+              </button>
+              <button
+                onClick={() => applyActionType("dispose", undefined, "Disposed")}
+                disabled={applying}
+                className="rounded-md border border-border-strong px-3 py-1.5 text-xs font-semibold uppercase tracking-wide hover:border-accent disabled:opacity-50"
+              >
+                Dispose
+              </button>
+            </>
           ) : (
             <p className="text-xs text-text-muted">
               Sign in as a {store} associate to apply this action.
@@ -119,6 +142,41 @@ export default function ItemDetailPage() {
         />
         <StatTile label="Daily demand" value={item.baseline_daily_demand.toFixed(1)} sub={`Elasticity used: ${item.elasticity_used.toFixed(3)}`} />
       </div>
+
+      {(item.category || item.vendor || item.batch_lot || item.shelf_location) && (
+        <div className="rounded-xl border border-border-strong bg-surface-card p-5">
+          <h2 className="mb-3 font-display text-lg font-700">Item details</h2>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
+            {item.category && (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-text-muted">Category</dt>
+                <dd className="mt-0.5">{item.category}</dd>
+              </div>
+            )}
+            {item.vendor && (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-text-muted">Vendor</dt>
+                <dd className="mt-0.5">{item.vendor}</dd>
+              </div>
+            )}
+            {item.batch_lot && (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-text-muted">Batch lot</dt>
+                <dd className="mt-0.5 font-mono text-xs">{item.batch_lot}</dd>
+              </div>
+            )}
+            {item.shelf_location && (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-text-muted">Shelf location</dt>
+                <dd className="mt-0.5">{item.shelf_location}</dd>
+              </div>
+            )}
+          </dl>
+          <p className="mt-3 text-xs text-text-muted">
+            Category comes from the source data; vendor, batch lot, and shelf location are illustrative demo data.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border-strong bg-surface-card p-5">

@@ -56,12 +56,20 @@ class ItemDetail(ItemSummary):
     baseline_daily_demand: float
     elasticity_used: float
     schedule: List[ScheduleDay]
+    # Store-operations metadata - category is derived from the real dept_id
+    # column; vendor/batch_lot/shelf_location are disclosed synthetic
+    # enrichment (see scripts/07_enrich_item_catalog_metadata.py) since the
+    # M5-derived pipeline has no such fields.
+    category: Optional[str] = None
+    vendor: Optional[str] = None
+    batch_lot: Optional[str] = None
+    shelf_location: Optional[str] = None
 
 
 class ApplyActionRequest(BaseModel):
     store: str
     item_id: str
-    action_type: str  # "markdown" | "transfer" | "donate" | "monitor"
+    action_type: str  # "markdown" | "transfer" | "donate" | "dispose" | "monitor"
     discount_pct: Optional[int] = None
 
 
@@ -74,3 +82,13 @@ class AppliedAction(BaseModel):
     applied_by: str
     applied_at: str
     status: str
+    # Estimated dollar impact of taking this action vs. doing nothing - see
+    # actions.py's _estimate_value_saved for the (disclosed, approximate)
+    # methodology per action type.
+    value_saved: Optional[float] = None
+
+
+class ActionHistorySummary(BaseModel):
+    total_value_saved: float
+    actions_taken: int
+    top_action_type: Optional[str] = None

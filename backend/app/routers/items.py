@@ -46,15 +46,21 @@ def get_item(store: str, item_id: str):
     con = get_connection()
 
     row = con.execute(f"""
-        SELECT r.{', r.'.join(ITEM_SUMMARY_COLS)}, d.baseline_daily_demand, d.elasticity_used
+        SELECT r.{', r.'.join(ITEM_SUMMARY_COLS)}, d.baseline_daily_demand, d.elasticity_used,
+               c.category, c.vendor, c.batch_lot, c.shelf_location
         FROM risk_scores r
         JOIN discount_recommendations d USING (store, item_id)
+        LEFT JOIN item_catalog c USING (item_id)
         WHERE r.store = ? AND r.item_id = ?
     """, [store, item_id]).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail=f"No item '{item_id}' at store '{store}'")
 
-    data = dict(zip(ITEM_SUMMARY_COLS + ["baseline_daily_demand", "elasticity_used"], row))
+    data = dict(zip(
+        ITEM_SUMMARY_COLS + ["baseline_daily_demand", "elasticity_used",
+                              "category", "vendor", "batch_lot", "shelf_location"],
+        row,
+    ))
 
     # Live countdown schedule, computed fresh from the optimizer rather than
     # only for the two pre-baked examples - cheap enough (a few hundred

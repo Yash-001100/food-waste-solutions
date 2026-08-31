@@ -46,6 +46,13 @@ export interface ItemDetail extends ItemSummary {
   baseline_daily_demand: number;
   elasticity_used: number;
   schedule: ScheduleDay[];
+  // Store-operations metadata: category comes from the real M5 dept_id
+  // column; vendor/batch_lot/shelf_location are disclosed synthetic
+  // enrichment (see backend scripts/07_enrich_item_catalog_metadata.py).
+  category?: string | null;
+  vendor?: string | null;
+  batch_lot?: string | null;
+  shelf_location?: string | null;
 }
 
 export interface TransferCandidate {
@@ -55,7 +62,12 @@ export interface TransferCandidate {
   current_stock: number;
   full_price: number;
   transfer_detail: string;
+  transfer_to_store?: string | null;
+  transfer_to_current_stock?: number | null;
+  transfer_to_daily_demand?: number | null;
 }
+
+export type ActionType = "markdown" | "transfer" | "donate" | "dispose" | "monitor";
 
 export interface AppliedAction {
   id: number;
@@ -66,6 +78,13 @@ export interface AppliedAction {
   applied_by: string;
   applied_at: string;
   status: string;
+  value_saved?: number | null;
+}
+
+export interface ActionHistorySummary {
+  total_value_saved: number;
+  actions_taken: number;
+  top_action_type: string | null;
 }
 
 export interface AuthedUser {
@@ -136,7 +155,7 @@ export const api = {
 
   async applyAction(
     token: string,
-    body: { store: string; item_id: string; action_type: string; discount_pct?: number }
+    body: { store: string; item_id: string; action_type: ActionType; discount_pct?: number }
   ) {
     return request<AppliedAction>(
       "/actions/apply",
@@ -148,6 +167,11 @@ export const api = {
   async actionHistory(token: string, store?: string) {
     const qs = store ? `?store=${store}` : "";
     return request<AppliedAction[]>(`/actions/history${qs}`, {}, token);
+  },
+
+  async actionHistorySummary(token: string, store?: string) {
+    const qs = store ? `?store=${store}` : "";
+    return request<ActionHistorySummary>(`/actions/history/summary${qs}`, {}, token);
   },
 };
 
