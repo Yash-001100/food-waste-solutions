@@ -69,7 +69,7 @@ export function ScheduleChart({
           x2={width - padding.right}
           y1={padding.top + innerH * (1 - g)}
           y2={padding.top + innerH * (1 - g)}
-          stroke="var(--border-strong)"
+          stroke="var(--color-outline-variant)"
           strokeWidth={1}
         />
       ))}
@@ -78,13 +78,13 @@ export function ScheduleChart({
       <path d={path} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
 
       {/* end marker + direct label */}
-      <circle cx={last.x} cy={last.y} r={4} fill={color} stroke="var(--surface-card)" strokeWidth={2} />
-      <text x={last.x - 6} y={last.y - 10} textAnchor="end" fontSize={11} fontFamily="var(--font-mono)" fill="var(--text-primary)">
+      <circle cx={last.x} cy={last.y} r={4} fill={color} stroke="var(--color-surface)" strokeWidth={2} />
+      <text x={last.x - 6} y={last.y - 10} textAnchor="end" fontSize={11} fill="var(--color-on-surface)">
         {valueFormat(points[points.length - 1].y)}
       </text>
 
       {/* first point label */}
-      <circle cx={coords[0].x} cy={coords[0].y} r={4} fill={color} stroke="var(--surface-card)" strokeWidth={2} />
+      <circle cx={coords[0].x} cy={coords[0].y} r={4} fill={color} stroke="var(--color-surface)" strokeWidth={2} />
 
       {hovered && (
         <g>
@@ -93,26 +93,26 @@ export function ScheduleChart({
             x2={hovered.coord.x}
             y1={padding.top}
             y2={padding.top + innerH}
-            stroke="var(--text-muted)"
+            stroke="var(--color-on-surface-variant)"
             strokeWidth={1}
             strokeDasharray="2,2"
           />
-          <circle cx={hovered.coord.x} cy={hovered.coord.y} r={5} fill={color} stroke="var(--surface-card)" strokeWidth={2} />
+          <circle cx={hovered.coord.x} cy={hovered.coord.y} r={5} fill={color} stroke="var(--color-surface)" strokeWidth={2} />
         </g>
       )}
 
       {/* x-axis endpoints */}
-      <text x={padding.left} y={height - 6} fontSize={10} fill="var(--text-muted)" fontFamily="var(--font-mono)">
+      <text x={padding.left} y={height - 6} fontSize={10} fill="var(--color-on-surface-variant)">
         {points[0].x}d left
       </text>
-      <text x={width - padding.right} y={height - 6} textAnchor="end" fontSize={10} fill="var(--text-muted)" fontFamily="var(--font-mono)">
+      <text x={width - padding.right} y={height - 6} textAnchor="end" fontSize={10} fill="var(--color-on-surface-variant)">
         {points[points.length - 1].x}d left
       </text>
 
       {hovered && (
         <g transform={`translate(${Math.min(Math.max(hovered.coord.x - 45, 0), width - 90)}, 4)`}>
-          <rect width={90} height={20} rx={4} fill="var(--surface-page)" stroke="var(--border-strong)" />
-          <text x={45} y={14} textAnchor="middle" fontSize={11} fontFamily="var(--font-mono)" fill="var(--text-primary)">
+          <rect width={90} height={20} rx={4} fill="var(--color-surface-container-low)" stroke="var(--color-outline-variant)" />
+          <text x={45} y={14} textAnchor="middle" fontSize={11} fill="var(--color-on-surface)">
             {hovered.point.x}d: {valueFormat(hovered.point.y)}
           </text>
         </g>

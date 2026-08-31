@@ -36,17 +36,14 @@ export default function OverviewPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-4xl font-800 tracking-tight">Store overview</h1>
-        <p className="mt-1 text-text-secondary">
+        <h1 className="text-3xl font-bold tracking-tight text-on-surface">Store overview</h1>
+        <p className="mt-1 text-on-surface-variant">
           Surplus risk across all 10 stores, from this morning&apos;s forecast run.
         </p>
       </div>
 
       {error && (
-        <p
-          className="rounded-lg border border-border-strong bg-surface-card p-4 text-sm"
-          style={{ color: "var(--risk-critical)" }}
-        >
+        <p className="rounded-lg border border-outline-variant bg-error-container p-4 text-sm text-on-error-container">
           {error}
         </p>
       )}
@@ -71,29 +68,38 @@ export default function OverviewPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {stores?.map((s) => (
-          <Link
-            key={s.store}
-            href={`/stores/${s.store}`}
-            className="rounded-xl border border-border-strong bg-surface-card p-5 transition-colors hover:bg-surface-card-hover"
-          >
-            <div className="flex items-baseline justify-between">
-              <h2 className="font-display text-2xl font-700 tracking-tight">{s.store}</h2>
-              <span className="font-mono text-xs text-text-muted">{s.total_items.toLocaleString()} items</span>
-            </div>
-            <div className="my-3">
-              <RiskStackBar summary={s} />
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-text-secondary">
-                <strong style={{ color: "var(--risk-critical)" }}>{s.critical}</strong> critical ·{" "}
-                <strong style={{ color: "var(--risk-high)" }}>{s.high}</strong> high
-              </span>
-              <span className="font-mono font-semibold">{formatUSD(s.potential_revenue_at_risk)}</span>
-            </div>
-          </Link>
-        ))}
+      <div>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+          Location breakdown
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {stores?.map((s) => (
+            <Link
+              key={s.store}
+              href={`/stores/${s.store}`}
+              className="rounded-lg border border-outline-variant bg-surface p-5 transition-colors hover:bg-surface-container"
+            >
+              <div className="flex items-baseline justify-between">
+                <h3 className="text-xl font-bold tracking-tight text-on-surface">{s.store}</h3>
+                <span className="text-xs tabular-nums text-on-surface-variant">
+                  {s.total_items.toLocaleString()} items
+                </span>
+              </div>
+              <div className="my-3">
+                <RiskStackBar summary={s} />
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-on-surface-variant">
+                  <strong className="text-error">{s.critical}</strong> critical ·{" "}
+                  <strong className="text-on-tertiary-fixed">{s.high}</strong> high
+                </span>
+                <span className="font-semibold tabular-nums text-on-surface">
+                  {formatUSD(s.potential_revenue_at_risk)}
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

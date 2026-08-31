@@ -8,10 +8,10 @@ export function StatTile({
   sub?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border-strong bg-surface-card p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">{label}</p>
-      <p className="font-display text-3xl font-700 tracking-tight">{value}</p>
-      {sub && <p className="mt-1 text-xs text-text-secondary">{sub}</p>}
+    <div className="rounded-lg border border-outline-variant bg-surface p-5">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">{label}</p>
+      <p className="text-3xl font-bold tracking-tight text-on-surface">{value}</p>
+      {sub && <p className="mt-1 text-xs text-on-surface-variant">{sub}</p>}
     </div>
   );
 }

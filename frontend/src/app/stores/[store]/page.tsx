@@ -44,59 +44,68 @@ export default function StoreRiskBoard() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-text-muted font-mono">{store}</p>
-        <h1 className="font-display text-4xl font-800 tracking-tight">Risk board</h1>
+        <p className="text-sm text-on-surface-variant">{store}</p>
+        <h1 className="text-3xl font-bold tracking-tight text-on-surface">Risk board</h1>
       </div>
 
       {error && (
-        <p className="rounded-lg border border-border-strong bg-surface-card p-4 text-sm" style={{ color: "var(--risk-critical)" }}>
+        <p className="rounded-lg border border-outline-variant bg-error-container p-4 text-sm text-on-error-container">
           {error}
         </p>
       )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-        <button
-          onClick={() => setFilter(null)}
-          className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
-            filter === null ? "border-accent text-accent" : "border-border-strong text-text-secondary hover:border-accent"
-          }`}
-        >
-          All {summary ? `(${summary.total_items})` : ""}
-        </button>
-        {RISK_TIERS.map((tier) => {
-          const count = summary
-            ? { Low: summary.low, Medium: summary.medium, High: summary.high, Critical: summary.critical }[tier]
-            : null;
-          return (
-            <button
-              key={tier}
-              onClick={() => setFilter(tier)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
-                filter === tier ? "border-accent text-accent" : "border-border-strong text-text-secondary hover:border-accent"
-              }`}
-            >
-              {tier} {count !== null ? `(${count})` : ""}
-            </button>
-          );
-        })}
+          <button
+            onClick={() => setFilter(null)}
+            className={`rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+              filter === null
+                ? "border-primary bg-primary/5 text-primary"
+                : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+            }`}
+          >
+            All {summary ? `(${summary.total_items})` : ""}
+          </button>
+          {RISK_TIERS.map((tier) => {
+            const count = summary
+              ? { Low: summary.low, Medium: summary.medium, High: summary.high, Critical: summary.critical }[tier]
+              : null;
+            return (
+              <button
+                key={tier}
+                onClick={() => setFilter(tier)}
+                className={`rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                  filter === tier
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-outline-variant text-on-surface-variant hover:bg-surface-container"
+                }`}
+              >
+                {tier} {count !== null ? `(${count})` : ""}
+              </button>
+            );
+          })}
         </div>
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Search barcode or name..."
-          className="w-full rounded-md border border-border-strong bg-surface-card px-3 py-1.5 text-sm placeholder:text-text-muted focus:border-accent focus:outline-none sm:w-64"
-        />
+        <div className="relative w-full sm:w-64">
+          <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style={{ fontSize: 18 }}>
+            search
+          </span>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Search barcode or name..."
+            className="w-full rounded-md border border-outline-variant bg-surface py-1.5 pl-9 pr-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:border-primary focus:outline-none"
+          />
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border-strong bg-surface-card">
+      <div className="overflow-x-auto rounded-lg border border-outline-variant bg-surface">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border-strong text-left text-xs uppercase tracking-wide text-text-muted">
+            <tr className="border-b border-outline-variant text-left text-xs uppercase tracking-wide text-on-surface-variant">
               <th className="px-4 py-3 font-semibold">Product</th>
               <th className="px-4 py-3 font-semibold">Risk</th>
               <th className="px-4 py-3 font-semibold text-right">Sellthrough (do nothing)</th>
@@ -106,33 +115,30 @@ export default function StoreRiskBoard() {
           </thead>
           <tbody>
             {pageItems?.map((item) => (
-              <tr
-                key={item.item_id}
-                className="border-b border-border-strong last:border-0 hover:bg-surface-card-hover"
-              >
+              <tr key={item.item_id} className="border-b border-outline-variant last:border-0 hover:bg-surface-container">
                 <td className="px-4 py-3">
-                  <Link href={`/stores/${store}/items/${item.item_id}`} className="font-medium hover:text-accent">
+                  <Link href={`/stores/${store}/items/${item.item_id}`} className="font-medium text-on-surface hover:text-primary">
                     {item.product_name}
                   </Link>
-                  <p className="font-mono text-xs text-text-muted">{item.barcode}</p>
+                  <p className="text-xs text-on-surface-variant">{item.barcode}</p>
                 </td>
                 <td className="px-4 py-3">
                   <RiskBadge tier={item.risk_score} />
                 </td>
-                <td className="px-4 py-3 text-right font-mono">{item.do_nothing_sellthrough_pct.toFixed(1)}%</td>
-                <td className="px-4 py-3 text-right font-mono">
+                <td className="px-4 py-3 text-right tabular-nums">{item.do_nothing_sellthrough_pct.toFixed(1)}%</td>
+                <td className="px-4 py-3 text-right tabular-nums">
                   {item.current_stock.toLocaleString()}
-                  <span className="text-text-muted"> · {formatUSD(item.full_price)}</span>
+                  <span className="text-on-surface-variant"> · {formatUSD(item.full_price)}</span>
                 </td>
-                <td className="px-4 py-3 text-text-secondary">{item.action}</td>
+                <td className="px-4 py-3 text-on-surface-variant">{item.action}</td>
               </tr>
             ))}
           </tbody>
         </table>
         {filteredItems && filteredItems.length === 0 && (
-          <p className="p-6 text-center text-sm text-text-muted">No items match this filter.</p>
+          <p className="p-6 text-center text-sm text-on-surface-variant">No items match this filter.</p>
         )}
-        {!items && !error && <p className="p-6 text-center text-sm text-text-muted font-mono">Loading...</p>}
+        {!items && !error && <p className="p-6 text-center text-sm text-on-surface-variant">Loading...</p>}
       </div>
 
       {filteredItems && (

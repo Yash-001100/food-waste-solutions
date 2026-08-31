@@ -18,9 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center text-text-muted font-mono text-sm">
-        Loading...
-      </div>
+      <div className="flex flex-1 items-center justify-center text-sm text-on-surface-variant">Loading...</div>
     );
   }
 
@@ -30,36 +28,76 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   const nav = [
-    { href: `/stores/${user.store}`, label: "Risk board" },
-    { href: `/stores/${user.store}/transfers`, label: "Transfers" },
-    { href: "/actions", label: "Action history" },
+    { href: `/`, label: "Store overview", icon: "storefront" },
+    { href: `/stores/${user.store}`, label: "Risk board", icon: "warning" },
+    { href: `/stores/${user.store}/transfers`, label: "Transfers", icon: "swap_horiz" },
+    { href: "/actions", label: "Action history", icon: "history" },
   ];
 
+  // Pick the single longest matching href so a parent route (the risk
+  // board) never stays lit up alongside a more specific child route
+  // (transfers) that happens to share its path prefix.
+  const matches = nav.filter(
+    (item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"))
+  );
+  const activeHref = matches.sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b border-border-strong bg-surface-card">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="font-display text-xl font-700 tracking-tight">
-            Food Waste Solutions
-          </Link>
-          <nav className="flex items-center gap-6 text-sm font-medium text-text-secondary">
-            {nav.map((item) => (
-              <Link key={item.href} href={item.href} className="hover:text-text-primary transition-colors">
+    <div className="flex min-h-screen w-full">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-outline-variant bg-surface-container-low">
+        <div className="flex items-center gap-2.5 px-6 py-6">
+          <span className="material-symbols-outlined text-primary" style={{ fontSize: 26 }}>
+            eco
+          </span>
+          <span className="text-base font-bold leading-tight tracking-tight text-on-surface">
+            Food Waste
+            <br />
+            Solutions
+          </span>
+        </div>
+
+        <nav className="flex flex-1 flex-col gap-1 px-3">
+          {nav.map((item) => {
+            const active = item.href === activeHref;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-secondary-container text-on-secondary-container"
+                    : "text-on-surface-variant hover:bg-surface-container"
+                }`}
+              >
+                <span className="material-symbols-outlined">{item.icon}</span>
                 {item.label}
               </Link>
-            ))}
-            <span className="h-4 w-px bg-border-strong" />
-            <span className="font-mono text-xs text-text-muted">{user.display_name}</span>
+            );
+          })}
+        </nav>
+
+        <div className="border-t border-outline-variant px-3 py-4">
+          <div className="flex items-center justify-between rounded-lg px-3 py-2">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-on-surface">{user.display_name}</p>
+              <p className="text-xs text-on-surface-variant">{user.store}</p>
+            </div>
             <button
               onClick={logout}
-              className="rounded-md border border-border-strong px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-text-secondary hover:border-accent hover:text-accent transition-colors"
+              title="Log out"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
             >
-              Log out
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                logout
+              </span>
             </button>
-          </nav>
+          </div>
         </div>
-      </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+      </aside>
+
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-6xl px-8 py-8">{children}</div>
+      </main>
     </div>
   );
 }

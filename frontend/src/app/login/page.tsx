@@ -29,67 +29,85 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-6">
+    <div className="flex min-h-screen items-center justify-center bg-background px-6">
       <div className="w-full max-w-sm">
-        <h1 className="font-display text-3xl font-800 tracking-tight text-center mb-1">
-          Food Waste Solutions
-        </h1>
-        <p className="text-center text-sm text-text-secondary mb-8">
-          Store associate sign-in
-        </p>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <span className="material-symbols-outlined mb-3 text-primary" style={{ fontSize: 40 }}>
+            eco
+          </span>
+          <h1 className="text-2xl font-bold tracking-tight text-on-surface">Food Waste Solutions</h1>
+          <p className="mt-1 text-sm text-on-surface-variant">Store associate sign-in</p>
+        </div>
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-xl border border-border-strong bg-surface-card p-6 shadow-sm space-y-4"
+          className="space-y-4 rounded-lg border border-outline-variant bg-surface p-6 shadow-sm"
         >
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-text-muted mb-1.5">
-              Username (store code)
-            </label>
-            <select
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-md border border-border-strong bg-surface-page px-3 py-2 font-mono text-sm outline-none focus:border-accent"
-            >
-              {DEMO_STORES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-start gap-2.5 rounded-lg bg-secondary-container px-3.5 py-3 text-on-secondary-container">
+            <span className="material-symbols-outlined mt-0.5" style={{ fontSize: 18 }}>
+              info
+            </span>
+            <p className="text-xs leading-snug">
+              Demo access: pick any store code, password <code className="font-semibold">foodwaste2026</code>
+            </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-text-muted mb-1.5">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+              Store code
+            </label>
+            <div className="relative">
+              <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style={{ fontSize: 18 }}>
+                storefront
+              </span>
+              <select
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full appearance-none rounded-md border border-outline-variant bg-surface-container-low py-2 pl-9 pr-3 text-sm text-on-surface outline-none focus:border-primary"
+              >
+                {DEMO_STORES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-border-strong bg-surface-page px-3 py-2 font-mono text-sm outline-none focus:border-accent"
-            />
+            <div className="relative">
+              <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style={{ fontSize: 18 }}>
+                lock
+              </span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-md border border-outline-variant bg-surface-container-low py-2 pl-9 pr-3 text-sm text-on-surface outline-none focus:border-primary"
+              />
+            </div>
           </div>
 
-          {error && (
-            <p className="text-sm font-medium" style={{ color: "var(--risk-critical)" }}>
-              {error}
-            </p>
-          )}
+          {error && <p className="text-sm font-medium text-error">{error}</p>}
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? "Signing in..." : "Sign in"}
+            {!submitting && (
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                arrow_forward
+              </span>
+            )}
           </button>
-
-          <p className="text-xs text-text-muted text-center pt-1">
-            Demo accounts: any store code, password{" "}
-            <code className="font-mono">foodwaste2026</code>
-          </p>
         </form>
+
+        <p className="mt-6 text-center text-xs text-on-surface-variant">Food Waste Solutions · demo build</p>
       </div>
     </div>
   );

@@ -1,4 +1,11 @@
 import type { Metadata } from "next";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/inter/800.css";
+import "@fontsource/inter/900.css";
+import "material-symbols/outlined.css";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { AppShell } from "@/components/AppShell";
@@ -8,25 +15,19 @@ export const metadata: Metadata = {
   description: "Surplus risk board and discount recommendations, per store.",
 };
 
-// Loaded via a plain <link> rather than next/font/google: next/font fetches
-// the font at BUILD time from the machine running `next build`/`next dev`,
-// which fails if that machine's network can't reach fonts.googleapis.com
-// (as this sandbox's egress policy doesn't allow, discovered while building
-// this). A <link> defers the fetch to the browser actually viewing the
-// page, which has normal internet access - the same fallback the platform's
-// own artifact-design guidance uses for this exact situation.
+// Inter and Material Symbols are self-hosted via @fontsource/inter and
+// material-symbols (both npm packages that ship the actual woff2 files)
+// rather than fetched from fonts.googleapis.com at request time. This
+// started as a workaround for this sandbox's egress policy blocking that
+// domain (confirmed: a CONNECT to fonts.googleapis.com gets a 403 from the
+// proxy), but it's the better choice for the shipped app too - one fewer
+// third-party origin, and the icon/font glyphs are always available even
+// if the viewer's network or an ad/privacy blocker interferes with Google
+// Fonts.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full antialiased">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
-        />
-      </head>
-      <body className="min-h-full flex flex-col bg-surface-page text-text-primary">
+      <body className="min-h-full flex flex-col bg-background text-on-surface">
         <AuthProvider>
           <AppShell>{children}</AppShell>
         </AuthProvider>
