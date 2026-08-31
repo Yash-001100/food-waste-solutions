@@ -41,6 +41,10 @@ class ItemSummary(BaseModel):
     waste_min_discount_pct: int
     revenue_max_discount_pct: int
     reachable_target: bool
+    # Real dept_id-derived category, included in the list endpoint too (not
+    # just item detail) so a store-wide view like the risk treemap can label
+    # tiles by department without a second round trip per item.
+    category: Optional[str] = None
 
 
 class ScheduleDay(BaseModel):
@@ -56,11 +60,10 @@ class ItemDetail(ItemSummary):
     baseline_daily_demand: float
     elasticity_used: float
     schedule: List[ScheduleDay]
-    # Store-operations metadata - category is derived from the real dept_id
-    # column; vendor/batch_lot/shelf_location are disclosed synthetic
-    # enrichment (see scripts/07_enrich_item_catalog_metadata.py) since the
-    # M5-derived pipeline has no such fields.
-    category: Optional[str] = None
+    # category is inherited from ItemSummary now; vendor/batch_lot/
+    # shelf_location are disclosed synthetic enrichment (see
+    # scripts/07_enrich_item_catalog_metadata.py) that only item detail
+    # needs, since the M5-derived pipeline has no such fields itself.
     vendor: Optional[str] = None
     batch_lot: Optional[str] = None
     shelf_location: Optional[str] = None

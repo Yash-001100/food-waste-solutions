@@ -31,6 +31,7 @@ export interface ItemSummary {
   waste_min_discount_pct: number;
   revenue_max_discount_pct: number;
   reachable_target: boolean;
+  category?: string | null;
 }
 
 export interface ScheduleDay {
@@ -46,10 +47,9 @@ export interface ItemDetail extends ItemSummary {
   baseline_daily_demand: number;
   elasticity_used: number;
   schedule: ScheduleDay[];
-  // Store-operations metadata: category comes from the real M5 dept_id
-  // column; vendor/batch_lot/shelf_location are disclosed synthetic
-  // enrichment (see backend scripts/07_enrich_item_catalog_metadata.py).
-  category?: string | null;
+  // category is inherited from ItemSummary; vendor/batch_lot/shelf_location
+  // are disclosed synthetic enrichment that only item detail needs (see
+  // backend scripts/07_enrich_item_catalog_metadata.py).
   vendor?: string | null;
   batch_lot?: string | null;
   shelf_location?: string | null;

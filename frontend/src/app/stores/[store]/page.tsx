@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api, ItemSummary, RiskTier, RISK_TIERS, StoreSummary } from "@/lib/api";
 import { RiskBadge } from "@/components/RiskBadge";
 import { Pagination } from "@/components/Pagination";
+import { Treemap, TreemapDatum } from "@/components/Treemap";
+import { ItemDetailPanel } from "@/components/ItemDetailPanel";
 import { formatUSD } from "@/lib/format";
+
+// Past this many tiles a treemap stops being readable (slivers, unreadable
+// labels) - so the map shows the biggest-value items and the note below it
+// says how many more are in the full table.
+const TREEMAP_MAX_TILES = 60;
 
 export default function StoreRiskBoard() {
   const params = useParams<{ store: string }>();
@@ -18,6 +25,7 @@ export default function StoreRiskBoard() {
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const PAGE_SIZE = 50;
 
   useEffect(() => {
@@ -40,6 +48,26 @@ export default function StoreRiskBoard() {
 
   const totalPages = filteredItems ? Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE)) : 1;
   const pageItems = filteredItems ? filteredItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : null;
+
+  // Sized by stock value (current_stock x full_price) so the map reads as
+  // "how much money is tied up in this item" regardless of which risk tier
+  // is filtered in; color still carries the risk tier, so the biggest
+  // red/amber tiles are what should draw the eye first. Capped to the
+  // highest-value items so tiles stay legible - the full list is still the
+  // table below.
+  const treemapData: TreemapDatum[] = useMemo(() => {
+    if (!filteredItems) return [];
+    return [...filteredItems]
+      .sort((a, b) => b.current_stock * b.full_price - a.current_stock * a.full_price)
+      .slice(0, TREEMAP_MAX_TILES)
+      .map((i) => ({
+        id: i.item_id,
+        label: i.product_name,
+        sub: i.category,
+        value: i.current_stock * i.full_price,
+        tier: i.risk_score,
+      }));
+  }, [filteredItems]);
 
   return (
     <div className="space-y-6">
@@ -102,6 +130,38 @@ export default function StoreRiskBoard() {
         </div>
       </div>
 
+      <div className="rounded-lg border border-outline-variant bg-surface p-5">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-bold text-on-surface">Risk map</h2>
+            <p className="text-xs text-on-surface-variant">
+              Tile size is stock value on hand (units x price); color is risk tier. Click a tile for detail and actions.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {RISK_TIERS.map((tier) => (
+              <RiskBadge key={tier} tier={tier} />
+            ))}
+          </div>
+        </div>
+
+        {items && !filteredItems?.length ? (
+          <p className="p-6 text-center text-sm text-on-surface-variant">No items match this filter.</p>
+        ) : !items ? (
+          <p className="p-6 text-center text-sm text-on-surface-variant">Loading...</p>
+        ) : (
+          <>
+            <Treemap data={treemapData} onSelect={setSelectedItemId} />
+            {filteredItems && filteredItems.length > TREEMAP_MAX_TILES && (
+              <p className="mt-3 text-xs text-on-surface-variant">
+                Showing the {TREEMAP_MAX_TILES} highest stock-value items of {filteredItems.length.toLocaleString()} - the
+                full list is sortable in the table below.
+              </p>
+            )}
+          </>
+        )}
+      </div>
+
       <div className="overflow-x-auto rounded-lg border border-outline-variant bg-surface">
         <table className="w-full text-sm">
           <thead>
@@ -143,6 +203,10 @@ export default function StoreRiskBoard() {
 
       {filteredItems && (
         <Pagination page={page} totalPages={totalPages} totalCount={filteredItems.length} pageSize={PAGE_SIZE} onChange={setPage} />
+      )}
+
+      {selectedItemId && (
+        <ItemDetailPanel store={store} itemId={selectedItemId} onClose={() => setSelectedItemId(null)} />
       )}
     </div>
   );
