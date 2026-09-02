@@ -1,12 +1,32 @@
+import json
+
 from fastapi import APIRouter, HTTPException
 from typing import List
 
-from database import get_connection
+from database import get_connection, PROC
 from schemas import StoreSummary
 
 router = APIRouter(tags=["stores"])
 
 STORES = ["CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3"]
+
+_DISTANCES_PATH = PROC / "store_distances.json"
+_distances_cache = None
+
+
+def _load_distances() -> dict:
+    """
+    Real store-to-store distances (scripts/08_transfer_cost_model.py): each
+    store is mapped to a real, distinct major city in its (real) state, and
+    distance is the real haversine great-circle distance between those real
+    coordinates - see that script's docstring for exactly what's real vs a
+    disclosed stand-in.
+    """
+    global _distances_cache
+    if _distances_cache is None:
+        with open(_DISTANCES_PATH) as f:
+            _distances_cache = json.load(f)
+    return _distances_cache
 
 
 @router.get("/stores", response_model=List[StoreSummary])
@@ -55,6 +75,42 @@ def get_store(store: str):
     return StoreSummary(**dict(zip(cols, row)))
 
 
+@router.get("/stores/{store}/distances")
+def store_distances(store: str):
+    """
+    Real distance from this store to every other store, nearest first - the
+    direct answer to "what is the distance of store CA_1 to CA_2 and
+    similar to other stores." See scripts/08_transfer_cost_model.py for what
+    each distance is actually computed from.
+    """
+    store = store.upper()
+    if store not in STORES:
+        raise HTTPException(status_code=404, detail=f"Unknown store '{store}'")
+    data = _load_distances()
+    if store not in data["stores"]:
+        raise HTTPException(status_code=404, detail=f"No distance data for '{store}'")
+
+    others = sorted(
+        (
+            {
+                "store": row["store_b"],
+                "city": data["stores"][row["store_b"]]["city"],
+                "miles": row["miles"],
+                "estimated_shipment_cost": round(row["miles"] * data["rate_per_mile"], 2),
+            }
+            for row in data["distances"]
+            if row["store_a"] == store
+        ),
+        key=lambda r: r["miles"],
+    )
+    return {
+        "store": store,
+        "city": data["stores"][store]["city"],
+        "rate_per_mile": data["rate_per_mile"],
+        "distances": others,
+    }
+
+
 @router.get("/stores/{store}/transfers")
 def list_transfers(store: str):
     """
@@ -88,7 +144,7 @@ def list_transfers(store: str):
             r2.current_stock AS transfer_to_current_stock,
             d2.baseline_daily_demand AS transfer_to_daily_demand,
             r.transfer_item_value, r.transfer_solo_cost_effective, r.transfer_shipment_cost,
-            r.transfer_batch_value, r.transfer_batch_item_count
+            r.transfer_batch_value, r.transfer_batch_item_count, r.transfer_distance_miles
         FROM risk_scores r
         LEFT JOIN risk_scores r2
             ON r2.store = r.transfer_target_store AND r2.item_id = r.item_id
@@ -116,8 +172,9 @@ def list_transfers(store: str):
             "transfer_shipment_cost": shipment_cost,
             "transfer_batch_value": round(batch_value, 2) if batch_value is not None else None,
             "transfer_batch_item_count": int(batch_n) if batch_n is not None else None,
+            "transfer_distance_miles": round(distance_mi, 1) if distance_mi is not None else None,
         }
         for (item_id, product_name, barcode, current_stock, full_price, action,
              to_store, to_stock, to_demand,
-             item_value, solo_ok, shipment_cost, batch_value, batch_n) in rows
+             item_value, solo_ok, shipment_cost, batch_value, batch_n, distance_mi) in rows
     ]

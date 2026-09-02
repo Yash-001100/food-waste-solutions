@@ -71,6 +71,21 @@ export interface TransferCandidate {
   transfer_shipment_cost?: number | null;
   transfer_batch_value?: number | null;
   transfer_batch_item_count?: number | null;
+  transfer_distance_miles?: number | null;
+}
+
+export interface StoreDistance {
+  store: string;
+  city: string;
+  miles: number;
+  estimated_shipment_cost: number;
+}
+
+export interface StoreDistancesResponse {
+  store: string;
+  city: string;
+  rate_per_mile: number;
+  distances: StoreDistance[];
 }
 
 export type ActionType = "markdown" | "transfer" | "donate" | "dispose" | "monitor";
@@ -157,6 +172,10 @@ export const api = {
 
   async listTransfers(store: string) {
     return request<TransferCandidate[]>(`/stores/${store}/transfers`);
+  },
+
+  async storeDistances(store: string) {
+    return request<StoreDistancesResponse>(`/stores/${store}/distances`);
   },
 
   async applyAction(

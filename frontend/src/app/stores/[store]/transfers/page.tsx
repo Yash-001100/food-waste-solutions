@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { api, TransferCandidate } from "@/lib/api";
+import { api, TransferCandidate, StoreDistancesResponse } from "@/lib/api";
 import { formatUSD } from "@/lib/format";
 import { Pagination } from "@/components/Pagination";
 
@@ -13,11 +13,14 @@ export default function TransfersPage() {
   const params = useParams<{ store: string }>();
   const store = params.store.toUpperCase();
   const [transfers, setTransfers] = useState<TransferCandidate[] | null>(null);
+  const [distances, setDistances] = useState<StoreDistancesResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [showDistances, setShowDistances] = useState(false);
 
   useEffect(() => {
     api.listTransfers(store).then(setTransfers).catch(() => setError("Couldn't load transfers."));
+    api.storeDistances(store).then(setDistances).catch(() => {});
   }, [store]);
 
   const totalPages = transfers ? Math.max(1, Math.ceil(transfers.length / PAGE_SIZE)) : 1;
@@ -39,9 +42,49 @@ export default function TransfersPage() {
         almost no single item&apos;s stock is worth a dedicated truck on its own — each card below shows what this
         item alone is worth versus what a real shipment costs. What actually makes transfer worthwhile is batching:
         every item queued for the same destination store rides on one shipment together, so the fixed cost gets
-        split across everything moving that route. Distance is estimated only as same-state vs. cross-state (the
-        dataset has no real store locations), so these are illustrative dollar figures, not sourced freight rates.
+        split across everything moving that route. Cost is distance × a real 2026 dry-van freight rate (
+        {distances ? `$${distances.rate_per_mile.toFixed(2)}/mi` : "$2.40/mi"}), and distance is the real
+        great-circle miles between a real major city standing in for each store (the dataset itself never
+        discloses a store&apos;s actual city) — not a flat same-state/cross-state guess anymore.{" "}
+        {distances && (
+          <button
+            type="button"
+            onClick={() => setShowDistances((v) => !v)}
+            className="font-medium text-primary underline underline-offset-2"
+          >
+            {showDistances ? "hide" : "see"} distances from {store} ({distances.city})
+          </button>
+        )}
       </div>
+
+      {showDistances && distances && (
+        <div className="overflow-x-auto rounded-lg border border-outline-variant bg-surface">
+          <table className="w-full text-left text-xs">
+            <thead className="border-b border-outline-variant text-on-surface-variant">
+              <tr>
+                <th className="px-4 py-2 font-medium">Store</th>
+                <th className="px-4 py-2 font-medium">Stand-in city</th>
+                <th className="px-4 py-2 text-right font-medium">Distance</th>
+                <th className="px-4 py-2 text-right font-medium">Est. shipment cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {distances.distances.map((d) => (
+                <tr key={d.store} className="border-b border-outline-variant last:border-0">
+                  <td className="px-4 py-2 font-medium text-on-surface">{d.store}</td>
+                  <td className="px-4 py-2 text-on-surface-variant">{d.city}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-on-surface-variant">
+                    {d.miles.toLocaleString()} mi
+                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums text-on-surface-variant">
+                    {formatUSD(d.estimated_shipment_cost)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {error && <p className="text-error">{error}</p>}
 
@@ -72,6 +115,12 @@ export default function TransfersPage() {
 
             {t.transfer_item_value != null && t.transfer_shipment_cost != null && (
               <div className="mt-3 rounded-md border border-outline-variant bg-surface-container-low p-3 text-xs">
+                {t.transfer_distance_miles != null && (
+                  <div className="mb-2 flex items-center justify-between text-on-surface-variant">
+                    <span>Distance to {t.transfer_to_store}</span>
+                    <span className="tabular-nums">{t.transfer_distance_miles.toLocaleString()} mi</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-on-surface-variant">This item alone</span>
                   <span className={`font-semibold tabular-nums ${t.transfer_solo_cost_effective ? "text-on-secondary-container" : "text-error"}`}>
