@@ -92,6 +92,42 @@ def apply_action(req: ApplyActionRequest, current_user: CurrentUser = Depends(ge
     return AppliedAction(**result)
 
 
+@router.post("/actions/{action_id}/revert", response_model=AppliedAction)
+def revert_action(action_id: int, current_user: CurrentUser = Depends(get_current_user)):
+    """
+    Undo a mistaken action - "I disposed the wrong item" is the case this
+    exists for. Actions are never actually wired to inventory (applying one
+    only inserts an audit row; it doesn't touch risk_scores.current_stock),
+    so there's no real-world state to roll back - reverting just flips the
+    row's status to 'reverted' rather than deleting it, so the mistake and
+    its correction both stay visible in the history instead of disappearing.
+    Reverted rows are excluded from the history summary's totals (they
+    didn't happen, financially), but the row itself is permanent - this is
+    an audit log, not a shopping cart.
+    """
+    con = get_connection()
+    row = con.execute(
+        "SELECT store, status FROM applied_actions WHERE id = ?", [action_id]
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"No action with id {action_id}")
+    store, status = row
+    if store != current_user.store:
+        raise HTTPException(status_code=403,
+                             detail=f"You're logged in for {current_user.store}, not {store}")
+    if status == "reverted":
+        raise HTTPException(status_code=409, detail="This action was already reverted")
+
+    updated = con.execute("""
+        UPDATE applied_actions SET status = 'reverted' WHERE id = ?
+        RETURNING id, store, item_id, action_type, discount_pct, applied_by, applied_at, status, value_saved
+    """, [action_id]).fetchone()
+    cols = ["id", "store", "item_id", "action_type", "discount_pct", "applied_by", "applied_at", "status", "value_saved"]
+    result = dict(zip(cols, updated))
+    result["applied_at"] = str(result["applied_at"])
+    return AppliedAction(**result)
+
+
 @router.get("/actions/history", response_model=List[AppliedAction])
 def action_history(
     store: Optional[str] = Query(None, description="Filter by store"),
@@ -124,15 +160,20 @@ def action_history_summary(
     store: Optional[str] = Query(None, description="Filter by store"),
     current_user: CurrentUser = Depends(get_current_user),
 ):
-    """Rollup stats for the action-history page: total value saved, count, and the most common action type."""
+    """
+    Rollup stats for the action-history page: total value saved, count, and
+    the most common action type. Reverted actions are excluded from all
+    three - they were undone, so they shouldn't count toward "value saved"
+    or "actions taken" even though the row itself stays in the log below.
+    """
     con = get_connection()
     target_store = (store or current_user.store).upper()
     total_row = con.execute("""
         SELECT count(*), coalesce(sum(value_saved), 0.0)
-        FROM applied_actions WHERE store = ?
+        FROM applied_actions WHERE store = ? AND status != 'reverted'
     """, [target_store]).fetchone()
     top_row = con.execute("""
-        SELECT action_type FROM applied_actions WHERE store = ?
+        SELECT action_type FROM applied_actions WHERE store = ? AND status != 'reverted'
         GROUP BY action_type ORDER BY count(*) DESC LIMIT 1
     """, [target_store]).fetchone()
     return ActionHistorySummary(

@@ -28,7 +28,8 @@ export function ItemDetailPanel({ store, itemId, onClose }: { store: string; ite
   const [item, setItem] = useState<ItemDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [applying, setApplying] = useState(false);
-  const [applied, setApplied] = useState<string | null>(null);
+  const [applied, setApplied] = useState<{ id: number; message: string } | null>(null);
+  const [reverting, setReverting] = useState(false);
 
   useEffect(() => {
     setItem(null);
@@ -55,11 +56,27 @@ export function ItemDetailPanel({ store, itemId, onClose }: { store: string; ite
     try {
       const result = await api.applyAction(token, { store, item_id: item.item_id, action_type: type, discount_pct: discount });
       const savedNote = result.value_saved ? ` — est. ${formatUSD(result.value_saved)} recovered` : "";
-      setApplied(`Logged: ${label ?? type}${savedNote}`);
+      setApplied({ id: result.id, message: `Logged: ${label ?? type}${savedNote}` });
     } catch (err) {
-      setApplied(err instanceof ApiError ? `Couldn't apply: ${err.message}` : "Couldn't reach the API.");
+      setApplied({ id: -1, message: err instanceof ApiError ? `Couldn't apply: ${err.message}` : "Couldn't reach the API." });
     } finally {
       setApplying(false);
+    }
+  }
+
+  async function handleUndo() {
+    if (!applied || applied.id < 0 || !token) return;
+    setReverting(true);
+    try {
+      await api.revertAction(token, applied.id);
+      setApplied({ id: -1, message: "Reverted — this action no longer counts toward totals." });
+    } catch (err) {
+      setApplied({
+        id: applied.id,
+        message: err instanceof ApiError ? `Couldn't undo: ${err.message}` : "Couldn't reach the API.",
+      });
+    } finally {
+      setReverting(false);
     }
   }
 
@@ -149,7 +166,20 @@ export function ItemDetailPanel({ store, itemId, onClose }: { store: string; ite
                     Dispose
                   </button>
                 </div>
-                {applied && <p className="text-sm text-on-surface-variant">{applied}</p>}
+                {applied && (
+                  <p className="text-sm text-on-surface-variant">
+                    {applied.message}
+                    {applied.id >= 0 && (
+                      <button
+                        onClick={handleUndo}
+                        disabled={reverting}
+                        className="ml-2 font-semibold text-primary underline-offset-2 hover:underline disabled:opacity-50"
+                      >
+                        {reverting ? "Undoing..." : "Undo"}
+                      </button>
+                    )}
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-xs text-on-surface-variant">Sign in as a {store} associate to apply this action.</p>

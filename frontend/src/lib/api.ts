@@ -164,6 +164,10 @@ export const api = {
     );
   },
 
+  async revertAction(token: string, actionId: number) {
+    return request<AppliedAction>(`/actions/${actionId}/revert`, { method: "POST" }, token);
+  },
+
   async actionHistory(token: string, store?: string) {
     const qs = store ? `?store=${store}` : "";
     return request<AppliedAction[]>(`/actions/history${qs}`, {}, token);
