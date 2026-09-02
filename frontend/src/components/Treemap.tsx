@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RiskTier } from "@/lib/api";
 import { formatUSD } from "@/lib/format";
 
@@ -59,6 +59,7 @@ function squarify<T extends { value: number }>(items: T[], x: number, y: number,
   }
   const row = items.slice(0, i);
   const rest = items.slice(i);
+  const restTotal = total - rowTotal;
   const rowArea = (rowTotal / total) * areaTotal;
 
   const result: Rect<T>[] = [];
@@ -71,7 +72,16 @@ function squarify<T extends { value: number }>(items: T[], x: number, y: number,
       result.push({ x, y: cy, w: rowWidth, h: itemHeight, item: it });
       cy += itemHeight;
     }
-    return result.concat(squarify(rest, x + rowWidth, y, w - rowWidth, h));
+    // Derive the remaining width from restTotal/total (a ratio of item
+    // values) rather than "w - rowWidth" (a subtraction of two pixel
+    // dimensions computed independently): the two are mathematically
+    // equal, but the subtraction form is prone to floating-point
+    // cancellation after enough recursion levels, occasionally landing a
+    // hair below 0 and tripping the w<=0 guard above - which used to
+    // silently discard every remaining item, leaving blank gaps in the
+    // rendered map. Deriving it from the value ratio is always >= 0.
+    const remainingWidth = restTotal > 0 ? w * (restTotal / total) : 0;
+    return result.concat(squarify(rest, x + rowWidth, y, remainingWidth, h));
   } else {
     const rowHeight = rowArea / w;
     let cx = x;
@@ -81,7 +91,8 @@ function squarify<T extends { value: number }>(items: T[], x: number, y: number,
       result.push({ x: cx, y, w: itemWidth, h: rowHeight, item: it });
       cx += itemWidth;
     }
-    return result.concat(squarify(rest, x, y + rowHeight, w, h - rowHeight));
+    const remainingHeight = restTotal > 0 ? h * (restTotal / total) : 0;
+    return result.concat(squarify(rest, x, y + rowHeight, w, remainingHeight));
   }
 }
 
@@ -92,23 +103,37 @@ const TIER_STYLE: Record<RiskTier, { bg: string; text: string; chipBg: string; c
   Low: { bg: "bg-secondary-container/60", text: "text-on-secondary-container", chipBg: "bg-secondary-container", chipText: "text-on-secondary-container" },
 };
 
-const WIDTH = 1000;
-const HEIGHT = 420;
-
 export function Treemap({ data, onSelect }: { data: TreemapDatum[]; onSelect: (id: string) => void }) {
   const [hoverId, setHoverId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Measured in real pixels (via ResizeObserver below) rather than laid out
+  // against a fixed logical size, so the map stays properly proportioned -
+  // not stretched - when the user drags the resizable box below to a
+  // different aspect ratio.
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      setSize({ w: width, h: height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const rects = useMemo(() => {
+    if (!size || size.w <= 0 || size.h <= 0) return [];
     const sorted = [...data].filter((d) => d.value > 0).sort((a, b) => b.value - a.value);
-    return squarify(sorted, 0, 0, WIDTH, HEIGHT);
-  }, [data]);
-
-  if (rects.length === 0) {
-    return <p className="p-6 text-center text-sm text-on-surface-variant">Nothing to show for this filter.</p>;
-  }
+    return squarify(sorted, 0, 0, size.w, size.h);
+  }, [data, size]);
 
   return (
-    <div className="relative w-full" style={{ aspectRatio: `${WIDTH} / ${HEIGHT}` }}>
+    <div ref={containerRef} className="relative h-full w-full">
+      {size && rects.length === 0 && (
+        <p className="p-6 text-center text-sm text-on-surface-variant">Nothing to show for this filter.</p>
+      )}
       {rects.map(({ x, y, w, h, item }) => {
         const style = TIER_STYLE[item.tier];
         const showLabel = w > 64 && h > 34;
@@ -124,7 +149,7 @@ export function Treemap({ data, onSelect }: { data: TreemapDatum[]; onSelect: (i
             className={`absolute overflow-hidden border-2 border-surface text-left transition-[filter] ${style.bg} ${style.text} ${
               hovered ? "z-10 brightness-95" : ""
             }`}
-            style={{ left: `${(x / WIDTH) * 100}%`, top: `${(y / HEIGHT) * 100}%`, width: `${(w / WIDTH) * 100}%`, height: `${(h / HEIGHT) * 100}%` }}
+            style={{ left: x, top: y, width: w, height: h }}
           >
             {showLabel && (
               <div className="flex h-full flex-col justify-between p-2">

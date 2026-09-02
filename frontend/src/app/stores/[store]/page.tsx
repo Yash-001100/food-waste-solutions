@@ -8,6 +8,7 @@ import { RiskBadge } from "@/components/RiskBadge";
 import { Pagination } from "@/components/Pagination";
 import { Treemap, TreemapDatum } from "@/components/Treemap";
 import { ItemDetailPanel } from "@/components/ItemDetailPanel";
+import { ResizableBox } from "@/components/ResizableBox";
 import { formatUSD } from "@/lib/format";
 
 // Past this many tiles a treemap stops being readable (slivers, unreadable
@@ -151,13 +152,19 @@ export default function StoreRiskBoard() {
           <p className="p-6 text-center text-sm text-on-surface-variant">Loading...</p>
         ) : (
           <>
-            <Treemap data={treemapData} onSelect={setSelectedItemId} />
-            {filteredItems && filteredItems.length > TREEMAP_MAX_TILES && (
-              <p className="mt-3 text-xs text-on-surface-variant">
-                Showing the {TREEMAP_MAX_TILES} highest stock-value items of {filteredItems.length.toLocaleString()} - the
-                full list is sortable in the table below.
-              </p>
-            )}
+            <ResizableBox storageKey="fws_riskmap_height" defaultHeight={420}>
+              <Treemap data={treemapData} onSelect={setSelectedItemId} />
+            </ResizableBox>
+            <p className="mt-2 text-xs text-on-surface-variant">
+              Drag the bottom-right corner to resize the map.
+              {filteredItems && filteredItems.length > TREEMAP_MAX_TILES && (
+                <>
+                  {" "}
+                  Showing the {TREEMAP_MAX_TILES} highest stock-value items of {filteredItems.length.toLocaleString()} - the
+                  full list is sortable in the table below.
+                </>
+              )}
+            </p>
           </>
         )}
       </div>
