@@ -40,6 +40,22 @@ a store ordered notably less than its item needs to last a full shelf life -
 a genuinely thin, "running low" position. A Critical store (chronically
 overstocked) paired with another store sitting well below 1.0 on the same
 item is a legitimate transfer candidate; if no other store is thin, donate.
+
+Second fix (this version), per explicit user feedback: the matching above
+originally searched for the thinnest store ACROSS ALL 10 STORES NATIONWIDE,
+which routinely paired a California store with a Wisconsin one 1,700+ miles
+away. That's not just an expensive shipment (scripts/08 already prices
+that) - for perishable, close-to-expiry stock specifically, it can be
+physically pointless: a multi-day cross-country haul can burn through a
+meaningful share of an item's shelf life before it ever reaches the shelf
+it was transferred to. Real inventory transfer programs restrict candidate
+stores to the same distribution region for exactly this reason. So the
+"thinnest other store" search is now scoped to same-state candidates only
+(state recovered from the store ID prefix, e.g. "CA_1" -> "CA") - a Critical
+item at a CA store can only ever be matched to another CA store, never to a
+TX or WI one. This shrinks the candidate pool from 9 other stores to 2-3,
+so it's expected (and reported below) that fewer Critical items find a
+taker and more fall through to Donate than before.
 """
 import json
 from pathlib import Path
@@ -77,6 +93,7 @@ def action_for(risk: str, waste_min_discount_pct: int) -> str:
 def main():
     df = pd.read_parquet(PROC / "discount_recommendations.parquet")
     df["days_of_cover"] = df["current_stock"] / df["baseline_daily_demand"]
+    df["state"] = df["store"].str.split("_").str[0]
 
     df["risk_score"] = [
         score_row(p, r) for p, r in zip(df["do_nothing_sellthrough_pct"], df["reachable_target"])
@@ -87,7 +104,11 @@ def main():
 
     # --- Transfer-vs-donate resolution for Critical items ---
     # Recover each store's synthetic ordering factor directly (see docstring
-    # for why days-of-cover doesn't work) and use it as the "running low" signal.
+    # for why days-of-cover doesn't work) and use it as the "running low"
+    # signal - grouped by (item_id, state) rather than just item_id, so the
+    # "thinnest other store" search never leaves the origin store's own state
+    # (see docstring: same-state-only, to avoid multi-day cross-country
+    # transit eating into a near-expiry item's remaining shelf life).
     df["order_factor"] = df["current_stock"] / (df["baseline_daily_demand"] * df["shelf_life_days"])
 
     def thinnest_other_store(group):
@@ -95,8 +116,8 @@ def main():
         return pd.Series({"thinnest_store": group.loc[idx, "store"],
                            "thinnest_factor": group.loc[idx, "order_factor"]})
 
-    thinnest = df.groupby("item_id").apply(thinnest_other_store, include_groups=False)
-    df = df.merge(thinnest, on="item_id", how="left")
+    thinnest = df.groupby(["item_id", "state"]).apply(thinnest_other_store, include_groups=False)
+    df = df.merge(thinnest, on=["item_id", "state"], how="left")
 
     def resolve_transfer(row):
         if row["risk_score"] != "Critical":
@@ -110,7 +131,7 @@ def main():
         meaningful_gap = (row["order_factor"] - row["thinnest_factor"]) >= MIN_FACTOR_GAP
         if not candidate_is_self and candidate_running_low and meaningful_gap:
             return f"Transfer to {row['thinnest_store']} (running low, order factor {row['thinnest_factor']:.2f} vs {row['order_factor']:.2f} here)"
-        return "Donate (no store running low enough on this item)"
+        return "Donate (no same-state store running low enough on this item)"
 
     df["action"] = df.apply(resolve_transfer, axis=1)
 
@@ -127,7 +148,7 @@ def main():
     for tier, n in counts.items():
         print(f"  {tier:>8}: {n:>6,} ({n / len(out) * 100:5.1f}%)")
 
-    print("\n--- Critical items: transfer vs donate ---")
+    print("\n--- Critical items: transfer vs donate (same-state only) ---")
     critical = out[out["risk_score"] == "Critical"]
     transferable = critical["action"].str.startswith("Transfer").sum()
     donate = critical["action"].str.startswith("Donate").sum()

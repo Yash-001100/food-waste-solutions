@@ -45,7 +45,11 @@ export default function TransfersPage() {
         split across everything moving that route. Cost is distance × a real 2026 dry-van freight rate (
         {distances ? `$${distances.rate_per_mile.toFixed(2)}/mi` : "$2.40/mi"}), and distance is the real
         great-circle miles between a real major city standing in for each store (the dataset itself never
-        discloses a store&apos;s actual city) — not a flat same-state/cross-state guess anymore.{" "}
+        discloses a store&apos;s actual city). Transfer targets are restricted to stores in the{" "}
+        <span className="font-semibold text-on-surface">same state</span> only — a multi-day cross-country haul
+        can burn through a near-expiry item&apos;s remaining shelf life before it even arrives, so out-of-state
+        stores are never proposed as a destination, however thin they are on stock (the table below still shows
+        every store&apos;s distance for reference, since you asked what those distances are).{" "}
         {distances && (
           <button
             type="button"
