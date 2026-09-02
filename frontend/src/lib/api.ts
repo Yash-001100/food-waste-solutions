@@ -180,3 +180,97 @@ export const api = {
 };
 
 export const RISK_TIERS: RiskTier[] = ["Critical", "High", "Medium", "Low"];
+
+export const ALL_STORES = ["CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3"];
+
+// --- Analytics (Task #10) ---
+
+export interface SalesHistoryPoint {
+  date: string;
+  qty: number;
+  sell_price: number | null;
+  discount_pct: number;
+}
+
+export interface SalesHistoryResponse {
+  store: string;
+  item_id: string;
+  product_name: string;
+  full_price: number;
+  baseline_daily_demand: number;
+  points: SalesHistoryPoint[];
+}
+
+export interface DiscountBucket {
+  bucket: string;
+  label: string;
+  price_ratio_range: string;
+  n_obs: number;
+  mean_qty_norm: number | null;
+}
+
+export interface ElasticityResponse {
+  store: string;
+  elasticity_used: number;
+  source: string;
+  buckets: DiscountBucket[];
+}
+
+export interface RiskActionMix {
+  store: string;
+  low: number;
+  medium: number;
+  high: number;
+  critical: number;
+  monitor: number;
+  small_markdown: number;
+  deep_markdown: number;
+  transfer: number;
+  donate: number;
+}
+
+export interface OutcomeSlice {
+  label: string;
+  count: number;
+  value_saved: number;
+}
+
+export interface OutcomesResponse {
+  store: string | null;
+  total: number;
+  slices: OutcomeSlice[];
+}
+
+export interface TransactionLogRow {
+  id: number;
+  store: string;
+  item_id: string;
+  product_name: string;
+  action_type: string;
+  discount_pct: number | null;
+  quantity: number | null;
+  full_price: number | null;
+  value_saved: number | null;
+  status: string;
+  applied_at: string;
+}
+
+export const analyticsApi = {
+  async salesHistory(store: string, itemId: string, days = 90) {
+    return request<SalesHistoryResponse>(`/analytics/sales-history/${store}/${itemId}?days=${days}`);
+  },
+  async elasticity(store: string) {
+    return request<ElasticityResponse>(`/analytics/elasticity/${store}`);
+  },
+  async riskActionMix() {
+    return request<RiskActionMix[]>(`/analytics/risk-action-mix`);
+  },
+  async outcomes(token: string, store?: string) {
+    const qs = store ? `?store=${store}` : "";
+    return request<OutcomesResponse>(`/analytics/outcomes${qs}`, {}, token);
+  },
+  async transactionLog(token: string, store?: string, limit = 50) {
+    const qs = new URLSearchParams({ limit: String(limit), ...(store ? { store } : {}) });
+    return request<TransactionLogRow[]>(`/analytics/transaction-log?${qs}`, {}, token);
+  },
+};

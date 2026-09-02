@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import get_connection
-from routers import auth, stores, items, actions
+from routers import auth, stores, items, actions, analytics
 
 app = FastAPI(
     title="Food Waste Solutions API",
@@ -44,3 +44,4 @@ app.include_router(auth.router)
 app.include_router(stores.router)
 app.include_router(items.router)
 app.include_router(actions.router)
+app.include_router(analytics.router)

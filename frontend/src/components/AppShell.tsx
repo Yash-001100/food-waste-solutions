@@ -30,6 +30,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const nav = [
     { href: `/`, label: "Store overview", icon: "storefront" },
     { href: `/stores/${user.store}`, label: "Risk board", icon: "warning" },
+    { href: "/analytics", label: "Analytics", icon: "monitoring" },
     { href: `/stores/${user.store}/transfers`, label: "Transfers", icon: "swap_horiz" },
     { href: "/actions", label: "Action history", icon: "history" },
   ];

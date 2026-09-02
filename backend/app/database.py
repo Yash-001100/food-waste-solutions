@@ -100,6 +100,16 @@ def _init_schema(con):
         # possible), but it shrinks it from "indefinite" to "sub-second,"
         # which is an acceptable, disclosed trade-off for a demo-scale app.
         con.execute("CHECKPOINT")
+    # stock_at_action - added for the analytics Transaction Log (Task #10),
+    # which needs a real, frozen "how much stock was this action about"
+    # number. current_stock on risk_scores is a live join and would silently
+    # drift if it ever changed, misrepresenting past actions - this is
+    # captured once, at apply time (see actions.py), rather than joined
+    # live. Same migration pattern as value_saved above, checked against the
+    # same pre-ALTER column snapshot.
+    if "stock_at_action" not in existing_cols:
+        con.execute("ALTER TABLE applied_actions ADD COLUMN stock_at_action DOUBLE")
+        con.execute("CHECKPOINT")
 
 
 def _register_views(con):
@@ -114,4 +124,24 @@ def _register_views(con):
     con.execute(f"""
         CREATE OR REPLACE VIEW item_catalog AS
         SELECT * FROM read_parquet('{PROC / "item_catalog.parquet"}')
+    """)
+    # Real M5 daily sales + price history (Task #01_build_dataset.py output),
+    # one parquet per store - globbed into a single view. This is genuine
+    # per-day unit sales and store price history, not a forecast or
+    # simulation (see README's real-vs-simulated section).
+    con.execute(f"""
+        CREATE OR REPLACE VIEW daily_sales AS
+        SELECT store_id AS store, item_id, date, qty, sell_price
+        FROM read_parquet('{PROC / "foods_long_*.parquet"}')
+    """)
+    # Real discount-response buckets (05_price_elasticity.py output): for
+    # each store, the actual normalized average quantity sold at each real
+    # discount depth observed in the M5 data. One CSV per store with no
+    # store column of its own, so the store is recovered from the filename
+    # DuckDB's CSV reader attaches when filename=true.
+    con.execute(f"""
+        CREATE OR REPLACE VIEW discount_response AS
+        SELECT regexp_extract(filename, 'discount_response_([A-Z0-9_]+)\\.csv$', 1) AS store,
+               bucket, price_ratio_range, n_obs, mean_qty_norm
+        FROM read_csv_auto('{PROC / "elasticity" / "discount_response_*.csv"}', filename=true)
     """)

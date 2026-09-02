@@ -95,3 +95,83 @@ class ActionHistorySummary(BaseModel):
     total_value_saved: float
     actions_taken: int
     top_action_type: Optional[str] = None
+
+
+# --- Analytics (Task #10): real M5 daily sales + discount-response data,
+# plus rollups of the model's own risk/action output and the store's
+# actually-applied action log. Nothing here is simulated - see
+# routers/analytics.py for exactly which real files back each field.
+
+
+class SalesHistoryPoint(BaseModel):
+    date: str
+    qty: float
+    sell_price: Optional[float] = None
+    discount_pct: float
+
+
+class SalesHistoryResponse(BaseModel):
+    store: str
+    item_id: str
+    product_name: str
+    full_price: float
+    baseline_daily_demand: float
+    points: List[SalesHistoryPoint]
+
+
+class DiscountBucket(BaseModel):
+    bucket: str
+    label: str
+    price_ratio_range: str
+    n_obs: int
+    mean_qty_norm: Optional[float] = None
+
+
+class ElasticityResponse(BaseModel):
+    store: str
+    elasticity_used: float
+    source: str  # "store_specific" | "pooled_fallback"
+    buckets: List[DiscountBucket]
+
+
+class RiskActionMix(BaseModel):
+    store: str
+    low: int
+    medium: int
+    high: int
+    critical: int
+    monitor: int
+    small_markdown: int
+    deep_markdown: int
+    transfer: int
+    donate: int
+
+
+class OutcomeSlice(BaseModel):
+    label: str
+    count: int
+    value_saved: float
+
+
+class OutcomesResponse(BaseModel):
+    store: Optional[str] = None
+    total: int
+    slices: List[OutcomeSlice]
+
+
+class TransactionLogRow(BaseModel):
+    id: int
+    store: str
+    item_id: str
+    product_name: str
+    action_type: str
+    discount_pct: Optional[int] = None
+    # Stock on hand at the moment this action was applied - a frozen
+    # snapshot (see actions.py), not the item's live current_stock, so this
+    # row keeps meaning even after current_stock later changes. Null for
+    # rows applied before this column existed.
+    quantity: Optional[float] = None
+    full_price: Optional[float] = None
+    value_saved: Optional[float] = None
+    status: str
+    applied_at: str

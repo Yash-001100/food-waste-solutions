@@ -81,10 +81,10 @@ def apply_action(req: ApplyActionRequest, current_user: CurrentUser = Depends(ge
     )
 
     row = con.execute("""
-        INSERT INTO applied_actions (store, item_id, action_type, discount_pct, applied_by, value_saved)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO applied_actions (store, item_id, action_type, discount_pct, applied_by, value_saved, stock_at_action)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         RETURNING id, store, item_id, action_type, discount_pct, applied_by, applied_at, status, value_saved
-    """, [store, req.item_id, req.action_type, req.discount_pct, current_user.username, value_saved]).fetchone()
+    """, [store, req.item_id, req.action_type, req.discount_pct, current_user.username, value_saved, stock]).fetchone()
 
     cols = ["id", "store", "item_id", "action_type", "discount_pct", "applied_by", "applied_at", "status", "value_saved"]
     result = dict(zip(cols, row))
