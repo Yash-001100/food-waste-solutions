@@ -61,7 +61,14 @@ export interface TransferCandidate {
   barcode: string;
   current_stock: number;
   full_price: number;
-  transfer_detail: string;
+  // Task #11 v3: a Critical item's surplus can be split across more than one
+  // same-state destination, each capped at how much it can genuinely use -
+  // so this row is ONE (item, destination) allocation, not the whole item.
+  // qty_transferred is this allocation's share; leftover_qty (repeated
+  // identically on every allocation row for the same item) is how much of
+  // the item's total stock has nowhere left to go and gets donated instead.
+  qty_transferred: number;
+  leftover_qty: number;
   transfer_to_store?: string | null;
   transfer_to_current_stock?: number | null;
   transfer_to_daily_demand?: number | null;

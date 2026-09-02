@@ -114,67 +114,79 @@ def store_distances(store: str):
 @router.get("/stores/{store}/transfers")
 def list_transfers(store: str):
     """
-    Critical items at this store with a resolved transfer target elsewhere.
+    This store's transfer allocations - one row per (item, destination store)
+    pair (scripts/07_risk_scoring.py + 08_transfer_cost_model.py). A single
+    Critical item can appear more than once here if its surplus was split
+    across multiple same-state destinations, each capped at how much it can
+    genuinely absorb (never just "dump everything on the thinnest store" -
+    see 07's docstring for why that was a real problem: it left 88.9% of
+    destinations more overstocked than they started).
 
     An earlier version of this endpoint tried to add a "needs N units"
     stockout-style number, the way a generic retail transfer feature would.
     That doesn't fit what this system actually measures: days_of_cover across
     the dataset runs 10-50+ days at the median (see risk_scores.parquet) -
     stores essentially never run out of physical units. The risk this whole
-    project detects is shelf-life/spoilage risk, not stockout risk, so a
-    "needed_qty" framed as replenishment need would be a fabricated number
-    dressed up as real: computing it honestly (days-of-cover math on the
-    sister store's own demand) returned needed=1 unit for 86% of rows in a
-    spot check, because the target stores are never actually low on hand -
-    that's the tell that the underlying "running low" is a relative
-    order/demand-factor comparison, not an absolute stock shortage.
-
-    What's real and worth surfacing instead: the sister store's own current
-    stock and daily demand for the same item, so a reader can see for
-    themselves that the store is comparatively higher-velocity for this item
-    (a better home for it before it expires here) - without a fabricated
-    "needs X units" urgency claim layered on top.
+    project detects is shelf-life/spoilage risk, not stockout risk. What IS
+    real and used here instead: qty_transferred is capped by the destination's
+    own order factor (current_stock vs. baseline_daily_demand x shelf_life),
+    the same real signal the matching logic itself uses to decide "thin
+    enough to bother with" in the first place - not a fabricated need number.
     """
     store = store.upper()
     con = get_connection()
     rows = con.execute("""
         SELECT
-            r.item_id, r.product_name, r.barcode, r.current_stock, r.full_price,
-            r.action, r.transfer_target_store,
+            a.item_id, a.product_name, a.barcode, a.full_price,
+            a.qty_transferred, a.value_transferred, a.solo_cost_effective,
+            a.destination_store, a.distance_miles, a.shipment_cost,
+            a.batch_value, a.batch_item_count,
+            r.current_stock AS origin_current_stock,
             r2.current_stock AS transfer_to_current_stock,
-            d2.baseline_daily_demand AS transfer_to_daily_demand,
-            r.transfer_item_value, r.transfer_solo_cost_effective, r.transfer_shipment_cost,
-            r.transfer_batch_value, r.transfer_batch_item_count, r.transfer_distance_miles
-        FROM risk_scores r
-        LEFT JOIN risk_scores r2
-            ON r2.store = r.transfer_target_store AND r2.item_id = r.item_id
-        LEFT JOIN discount_recommendations d2
-            ON d2.store = r.transfer_target_store AND d2.item_id = r.item_id
-        WHERE r.store = ? AND r.risk_score = 'Critical' AND r.action LIKE 'Transfer to%'
-        ORDER BY r.current_stock DESC
+            d2.baseline_daily_demand AS transfer_to_daily_demand
+        FROM transfer_allocations a
+        JOIN risk_scores r ON r.store = a.origin_store AND r.item_id = a.item_id
+        LEFT JOIN risk_scores r2 ON r2.store = a.destination_store AND r2.item_id = a.item_id
+        LEFT JOIN discount_recommendations d2 ON d2.store = a.destination_store AND d2.item_id = a.item_id
+        WHERE a.origin_store = ?
+        ORDER BY a.value_transferred DESC
     """, [store]).fetchall()
+
+    cols = ["item_id", "product_name", "barcode", "full_price",
+            "qty_transferred", "value_transferred", "solo_cost_effective",
+            "destination_store", "distance_miles", "shipment_cost",
+            "batch_value", "batch_item_count",
+            "origin_current_stock", "transfer_to_current_stock", "transfer_to_daily_demand"]
+    out = [dict(zip(cols, r)) for r in rows]
+
+    # How much of this item's total surplus is left over at the origin after
+    # ALL its (possibly multiple) destinations are accounted for - shown once
+    # per item, not per allocation row, so a 2-destination item doesn't look
+    # like it has two different leftover amounts.
+    placed_by_item: dict[str, float] = {}
+    for row in out:
+        placed_by_item[row["item_id"]] = placed_by_item.get(row["item_id"], 0.0) + row["qty_transferred"]
 
     return [
         {
-            "item_id": item_id, "product_name": product_name, "barcode": barcode,
-            "current_stock": current_stock, "full_price": full_price,
-            "transfer_detail": action,
-            "transfer_to_store": to_store,
-            "transfer_to_current_stock": round(to_stock, 1) if to_stock is not None else None,
-            "transfer_to_daily_demand": round(to_demand, 1) if to_demand is not None else None,
+            "item_id": r["item_id"], "product_name": r["product_name"], "barcode": r["barcode"],
+            "full_price": r["full_price"],
+            "current_stock": round(r["origin_current_stock"], 1),
+            "qty_transferred": round(r["qty_transferred"], 1),
+            "leftover_qty": round(max(0.0, r["origin_current_stock"] - placed_by_item[r["item_id"]]), 1),
+            "transfer_to_store": r["destination_store"],
+            "transfer_to_current_stock": round(r["transfer_to_current_stock"], 1) if r["transfer_to_current_stock"] is not None else None,
+            "transfer_to_daily_demand": round(r["transfer_to_daily_demand"], 1) if r["transfer_to_daily_demand"] is not None else None,
+            "transfer_distance_miles": round(r["distance_miles"], 1),
             # Shipment economics (Task #11) - see scripts/08_transfer_cost_model.py.
-            # This item's OWN stock value is almost never enough to justify a
-            # dedicated truck on its own (transfer_solo_cost_effective is False
-            # for the vast majority of rows); it only becomes worth moving once
-            # batched with every other item queued for the same destination.
-            "transfer_item_value": round(item_value, 2) if item_value is not None else None,
-            "transfer_solo_cost_effective": solo_ok,
-            "transfer_shipment_cost": shipment_cost,
-            "transfer_batch_value": round(batch_value, 2) if batch_value is not None else None,
-            "transfer_batch_item_count": int(batch_n) if batch_n is not None else None,
-            "transfer_distance_miles": round(distance_mi, 1) if distance_mi is not None else None,
+            # This allocation's own value is almost never enough to justify a
+            # dedicated truck by itself; it only becomes worth moving once
+            # batched with every other allocation queued for the same route.
+            "transfer_item_value": round(r["value_transferred"], 2),
+            "transfer_solo_cost_effective": r["solo_cost_effective"],
+            "transfer_shipment_cost": r["shipment_cost"],
+            "transfer_batch_value": round(r["batch_value"], 2),
+            "transfer_batch_item_count": int(r["batch_item_count"]),
         }
-        for (item_id, product_name, barcode, current_stock, full_price, action,
-             to_store, to_stock, to_demand,
-             item_value, solo_ok, shipment_cost, batch_value, batch_n, distance_mi) in rows
+        for r in out
     ]

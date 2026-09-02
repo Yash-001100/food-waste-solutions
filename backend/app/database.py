@@ -145,3 +145,13 @@ def _register_views(con):
                bucket, price_ratio_range, n_obs, mean_qty_norm
         FROM read_csv_auto('{PROC / "elasticity" / "discount_response_*.csv"}', filename=true)
     """)
+    # Transfer allocations (scripts/07_risk_scoring.py + 08_transfer_cost_model.py):
+    # one row per (origin store, item, destination store) - a Critical item's
+    # surplus can be split across more than one same-state destination, each
+    # capped at how much it can genuinely use, so this is a real line-item
+    # table rather than a single column on risk_scores. Only cost-effective,
+    # already-resolved allocations survive here (08 drops the rest to donate).
+    con.execute(f"""
+        CREATE OR REPLACE VIEW transfer_allocations AS
+        SELECT * FROM read_parquet('{PROC / "transfer_allocations.parquet"}')
+    """)

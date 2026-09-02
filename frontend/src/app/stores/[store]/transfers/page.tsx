@@ -33,7 +33,9 @@ export default function TransfersPage() {
         <h1 className="text-3xl font-bold tracking-tight text-on-surface">Transfer candidates</h1>
         <p className="mt-1 text-on-surface-variant">
           Critical items here that discounting can&apos;t clear, where a sister store sells through this item
-          noticeably faster and could use the stock before it expires here.
+          noticeably faster and could use the stock before it expires here. Each card is one shipment lane for
+          that item — a single item can appear more than once if its surplus is split across a couple of
+          destinations, each capped at how much it can genuinely use.
         </p>
       </div>
 
@@ -95,7 +97,7 @@ export default function TransfersPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {pageTransfers?.map((t) => (
           <Link
-            key={t.item_id}
+            key={`${t.item_id}-${t.transfer_to_store}`}
             href={`/stores/${store}/items/${t.item_id}`}
             className="rounded-lg border border-outline-variant bg-surface p-5 hover:bg-surface-container"
           >
@@ -105,16 +107,20 @@ export default function TransfersPage() {
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                 swap_horiz
               </span>
-              {t.transfer_detail}
+              Transfer {t.qty_transferred.toLocaleString()} units to {t.transfer_to_store}
             </p>
             {t.transfer_to_store && t.transfer_to_current_stock != null && (
               <p className="mt-1 text-xs text-on-surface-variant">
                 {t.transfer_to_store} holds {t.transfer_to_current_stock.toLocaleString()} units
                 {t.transfer_to_daily_demand != null && ` against ~${t.transfer_to_daily_demand}/day of its own demand`}
+                {" "}— topped up to a normal stock level, not overstocked
               </p>
             )}
             <p className="mt-2 text-xs tabular-nums text-on-surface-variant">
               {t.current_stock.toLocaleString()} units on hand · {formatUSD(t.full_price)} each
+              {t.leftover_qty > 0.5 && (
+                <span className="text-tertiary"> · {t.leftover_qty.toLocaleString()} left over, donated</span>
+              )}
             </p>
 
             {t.transfer_item_value != null && t.transfer_shipment_cost != null && (

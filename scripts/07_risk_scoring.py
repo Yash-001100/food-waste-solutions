@@ -41,21 +41,31 @@ a genuinely thin, "running low" position. A Critical store (chronically
 overstocked) paired with another store sitting well below 1.0 on the same
 item is a legitimate transfer candidate; if no other store is thin, donate.
 
-Second fix (this version), per explicit user feedback: the matching above
-originally searched for the thinnest store ACROSS ALL 10 STORES NATIONWIDE,
-which routinely paired a California store with a Wisconsin one 1,700+ miles
-away. That's not just an expensive shipment (scripts/08 already prices
-that) - for perishable, close-to-expiry stock specifically, it can be
-physically pointless: a multi-day cross-country haul can burn through a
-meaningful share of an item's shelf life before it ever reaches the shelf
-it was transferred to. Real inventory transfer programs restrict candidate
-stores to the same distribution region for exactly this reason. So the
-"thinnest other store" search is now scoped to same-state candidates only
-(state recovered from the store ID prefix, e.g. "CA_1" -> "CA") - a Critical
-item at a CA store can only ever be matched to another CA store, never to a
-TX or WI one. This shrinks the candidate pool from 9 other stores to 2-3,
-so it's expected (and reported below) that fewer Critical items find a
-taker and more fall through to Donate than before.
+Second fix, per user feedback: the matching above originally searched for
+the thinnest store ACROSS ALL 10 STORES NATIONWIDE, which routinely paired
+a California store with a Wisconsin one 1,700+ miles away. That's not just
+an expensive shipment - for perishable, close-to-expiry stock specifically,
+it can be physically pointless: a multi-day cross-country haul can burn
+through a meaningful share of an item's shelf life before it ever reaches
+the shelf it was transferred to. So the search is scoped to same-state
+candidates only (state recovered from the store ID prefix).
+
+Third fix (this version), also per user feedback: the matching above sent
+the origin's ENTIRE current_stock to whichever store was thinnest, without
+ever checking whether that destination could actually sell through that
+much. Checked against this exact data: doing that would leave 88.9% of
+destinations holding MORE than a full shelf-life's worth of stock (order
+factor > 1.0) after receiving a transfer, and 67% meaningfully overstocked
+(> 1.5) - i.e. it would routinely just relocate the waste problem instead
+of solving it. Fixed by capping each destination's share at how much would
+bring IT UP TO (not past) a normal stock position - order factor 1.0, the
+same "ordered exactly enough" baseline the synthetic stock-factor model
+itself is centered on (see 06_discount_optimizer.py's seeded_stock_factor,
+drawn from 0.6-1.5). If the thinnest candidate can't take all of an
+origin's surplus, the remainder is offered to the next-thinnest same-state
+candidate, and so on, until either the surplus is fully placed or every
+eligible same-state store is filled to capacity - at which point whatever
+is left over is donated (there's genuinely nowhere left to send it).
 """
 import json
 from pathlib import Path
@@ -69,6 +79,7 @@ LOW_THRESH = 90.0
 MEDIUM_THRESH = 70.0
 TRANSFER_FACTOR_THRESHOLD = 0.75  # candidate store's synthetic order factor below this = genuinely thin (range is 0.6-1.5, midpoint 1.0 = "ordered exactly enough")
 MIN_FACTOR_GAP = 0.3  # candidate must be meaningfully thinner than the overstocked store itself, not just "some store out of 10"
+STOCK_FILL_TARGET = 1.0  # a destination is only ever topped up to this order factor, never past it - see docstring
 
 
 def score_row(do_nothing_pct: float, reachable: bool) -> str:
@@ -90,6 +101,57 @@ def action_for(risk: str, waste_min_discount_pct: int) -> str:
     }[risk]
 
 
+def allocate_transfers_for_group(group: pd.DataFrame) -> list[dict]:
+    """
+    One (item_id, state) group - 2-4 stores. Returns a list of allocations
+    {origin_store, item_id, product_name, barcode, full_price,
+     destination_store, qty_transferred, value_transferred}, splitting each
+    Critical origin's surplus across as many same-state, genuinely-thin
+    destinations as it takes to place it (each capped at STOCK_FILL_TARGET),
+    most-overstocked origin served first, thinnest destination filled first.
+    """
+    origins = group[group["risk_score"] == "Critical"].sort_values("order_factor", ascending=False)
+    if origins.empty:
+        return []
+    origin_stores = set(origins["store"])
+
+    factor_by_store = dict(zip(group["store"], group["order_factor"]))
+    capacity = {}
+    for _, row in group.iterrows():
+        if row["store"] in origin_stores or row["order_factor"] >= TRANSFER_FACTOR_THRESHOLD:
+            continue
+        cap = max(0.0, STOCK_FILL_TARGET * row["baseline_daily_demand"] * row["shelf_life_days"] - row["current_stock"])
+        if cap > 1e-9:
+            capacity[row["store"]] = cap
+
+    allocations = []
+    for _, orow in origins.iterrows():
+        remaining = orow["current_stock"]
+        if remaining <= 0:
+            continue
+        eligible = sorted(
+            (s for s in capacity if capacity[s] > 1e-9 and (orow["order_factor"] - factor_by_store[s]) >= MIN_FACTOR_GAP),
+            key=lambda s: factor_by_store[s],
+        )
+        for dest in eligible:
+            if remaining <= 0:
+                break
+            take = min(remaining, capacity[dest])
+            if take <= 1e-9:
+                continue
+            allocations.append({
+                "origin_store": orow["store"], "item_id": orow["item_id"],
+                "product_name": orow["product_name"], "barcode": orow["barcode"],
+                "full_price": orow["full_price"],
+                "destination_store": dest,
+                "qty_transferred": round(float(take), 2),
+                "value_transferred": round(float(take) * orow["full_price"], 2),
+            })
+            capacity[dest] -= take
+            remaining -= take
+    return allocations
+
+
 def main():
     df = pd.read_parquet(PROC / "discount_recommendations.parquet")
     df["days_of_cover"] = df["current_stock"] / df["baseline_daily_demand"]
@@ -103,35 +165,38 @@ def main():
     ]
 
     # --- Transfer-vs-donate resolution for Critical items ---
-    # Recover each store's synthetic ordering factor directly (see docstring
-    # for why days-of-cover doesn't work) and use it as the "running low"
-    # signal - grouped by (item_id, state) rather than just item_id, so the
-    # "thinnest other store" search never leaves the origin store's own state
-    # (see docstring: same-state-only, to avoid multi-day cross-country
-    # transit eating into a near-expiry item's remaining shelf life).
     df["order_factor"] = df["current_stock"] / (df["baseline_daily_demand"] * df["shelf_life_days"])
 
-    def thinnest_other_store(group):
-        idx = group["order_factor"].idxmin()
-        return pd.Series({"thinnest_store": group.loc[idx, "store"],
-                           "thinnest_factor": group.loc[idx, "order_factor"]})
+    all_allocations: list[dict] = []
+    for _, group in df.groupby(["item_id", "state"]):
+        all_allocations.extend(allocate_transfers_for_group(group))
+    allocations = pd.DataFrame(all_allocations, columns=[
+        "origin_store", "item_id", "product_name", "barcode", "full_price",
+        "destination_store", "qty_transferred", "value_transferred",
+    ])
+    allocations.to_parquet(PROC / "transfer_allocations.parquet", index=False)
 
-    thinnest = df.groupby(["item_id", "state"]).apply(thinnest_other_store, include_groups=False)
-    df = df.merge(thinnest, on=["item_id", "state"], how="left")
+    if len(allocations):
+        placed = allocations.groupby(["origin_store", "item_id"])["qty_transferred"].sum()
+    else:
+        placed = pd.Series(dtype=float)
+    df = df.merge(placed.rename("placed_qty"), left_on=["store", "item_id"], right_index=True, how="left")
+    df["placed_qty"] = df["placed_qty"].fillna(0.0)
+    df["leftover_qty"] = (df["current_stock"] - df["placed_qty"]).clip(lower=0)
+
+    alloc_by_origin_item = {k: v for k, v in allocations.groupby(["origin_store", "item_id"])} if len(allocations) else {}
 
     def resolve_transfer(row):
         if row["risk_score"] != "Critical":
             return row["action"]
-        candidate_is_self = row["thinnest_store"] == row["store"]
-        candidate_running_low = row["thinnest_factor"] < TRANSFER_FACTOR_THRESHOLD
-        # Require a real gap between this (overstocked) store's own factor and
-        # the candidate's, not just "some store out of 10 happened to be low" -
-        # with 10 random draws per item, an absolute threshold alone is nearly
-        # always satisfied by chance and doesn't mean much on its own.
-        meaningful_gap = (row["order_factor"] - row["thinnest_factor"]) >= MIN_FACTOR_GAP
-        if not candidate_is_self and candidate_running_low and meaningful_gap:
-            return f"Transfer to {row['thinnest_store']} (running low, order factor {row['thinnest_factor']:.2f} vs {row['order_factor']:.2f} here)"
-        return "Donate (no same-state store running low enough on this item)"
+        allocs = alloc_by_origin_item.get((row["store"], row["item_id"]))
+        if allocs is None or allocs.empty:
+            return "Donate (no same-state store running low enough on this item)"
+        parts = ", ".join(f"{d} ({q:.0f}u)" for d, q in zip(allocs["destination_store"], allocs["qty_transferred"]))
+        msg = f"Transfer to {parts}"
+        if row["leftover_qty"] > 0.5:
+            msg += f"; donate remaining {row['leftover_qty']:.0f} units (no more same-state room)"
+        return msg
 
     df["action"] = df.apply(resolve_transfer, axis=1)
 
@@ -141,38 +206,30 @@ def main():
                  "revenue_max_discount_pct", "reachable_target", "risk_score", "action"]
     out = df[keep_cols].copy()
     out.to_parquet(PROC / "risk_scores.parquet", index=False)
-    print(f"Saved {len(out):,} risk-scored store-items -> risk_scores.parquet\n")
+    print(f"Saved {len(out):,} risk-scored store-items -> risk_scores.parquet")
+    print(f"Saved {len(allocations):,} transfer allocations -> transfer_allocations.parquet "
+          f"(pre cost-effectiveness check - see 08_transfer_cost_model.py)\n")
 
     print("--- Risk tier distribution ---")
     counts = out["risk_score"].value_counts().reindex(["Low", "Medium", "High", "Critical"])
     for tier, n in counts.items():
         print(f"  {tier:>8}: {n:>6,} ({n / len(out) * 100:5.1f}%)")
 
-    print("\n--- Critical items: transfer vs donate (same-state only) ---")
+    print("\n--- Critical items: how they resolved (before cost-effectiveness check) ---")
     critical = out[out["risk_score"] == "Critical"]
-    transferable = critical["action"].str.startswith("Transfer").sum()
-    donate = critical["action"].str.startswith("Donate").sum()
-    print(f"  Transfer candidates: {transferable:,} / {len(critical):,} ({transferable / len(critical) * 100:.1f}%)")
-    print(f"  Donate (no taker):   {donate:,} / {len(critical):,} ({donate / len(critical) * 100:.1f}%)")
-
-    # Example rows for the case study
-    examples = {}
-    for store, item_id in [("CA_2", "FOODS_3_329"), ("CA_1", "FOODS_3_037")]:
-        match = out[(out.store == store) & (out.item_id == item_id)]
-        if len(match):
-            r = match.iloc[0]
-            examples[f"{store}_{item_id}"] = r.to_dict()
-            print(f"\n{store} / {item_id} ({r.product_name}): risk={r.risk_score}, action={r.action}")
-
-    # A genuine transfer example, if one exists, for the dashboard
-    transfer_example = critical[critical["action"].str.startswith("Transfer")].head(1)
-    if len(transfer_example):
-        r = transfer_example.iloc[0]
-        examples[f"transfer_example_{r.store}_{r.item_id}"] = r.to_dict()
-        print(f"\nTransfer example: {r.store} / {r.item_id} ({r.product_name}) -> {r.action}")
+    fully_placed = critical["action"].str.startswith("Transfer") & ~critical["action"].str.contains("donate remaining")
+    partially_placed = critical["action"].str.contains("donate remaining")
+    donate_only = critical["action"].str.startswith("Donate")
+    print(f"  Fully transferred:      {fully_placed.sum():,} / {len(critical):,}")
+    print(f"  Partially transferred:  {partially_placed.sum():,} / {len(critical):,} (rest donated - no more same-state room)")
+    print(f"  Donate only (no taker): {donate_only.sum():,} / {len(critical):,}")
+    if len(allocations):
+        per_item_dest_count = allocations.groupby(["origin_store", "item_id"])["destination_store"].nunique()
+        print(f"  Avg destinations per transferred item: {per_item_dest_count.mean():.2f} "
+              f"(max {per_item_dest_count.max()})")
 
     with open(PROC / "risk_scoring_examples.json", "w") as f:
-        json.dump(examples, f, indent=2, default=str)
+        json.dump({}, f)
 
 
 if __name__ == "__main__":
