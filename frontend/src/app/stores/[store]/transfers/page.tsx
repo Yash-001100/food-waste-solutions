@@ -34,6 +34,15 @@ export default function TransfersPage() {
         </p>
       </div>
 
+      <div className="rounded-lg border border-outline-variant bg-surface-container-low p-4 text-xs text-on-surface-variant">
+        <span className="font-semibold text-on-surface">Shipment economics: </span>
+        almost no single item&apos;s stock is worth a dedicated truck on its own — each card below shows what this
+        item alone is worth versus what a real shipment costs. What actually makes transfer worthwhile is batching:
+        every item queued for the same destination store rides on one shipment together, so the fixed cost gets
+        split across everything moving that route. Distance is estimated only as same-state vs. cross-state (the
+        dataset has no real store locations), so these are illustrative dollar figures, not sourced freight rates.
+      </div>
+
       {error && <p className="text-error">{error}</p>}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -60,6 +69,28 @@ export default function TransfersPage() {
             <p className="mt-2 text-xs tabular-nums text-on-surface-variant">
               {t.current_stock.toLocaleString()} units on hand · {formatUSD(t.full_price)} each
             </p>
+
+            {t.transfer_item_value != null && t.transfer_shipment_cost != null && (
+              <div className="mt-3 rounded-md border border-outline-variant bg-surface-container-low p-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-on-surface-variant">This item alone</span>
+                  <span className={`font-semibold tabular-nums ${t.transfer_solo_cost_effective ? "text-on-secondary-container" : "text-error"}`}>
+                    {formatUSD(t.transfer_item_value)}
+                  </span>
+                </div>
+                {!t.transfer_solo_cost_effective && (
+                  <p className="mt-0.5 text-error">wouldn&apos;t cover a {formatUSD(t.transfer_shipment_cost)} shipment by itself</p>
+                )}
+                {t.transfer_batch_value != null && t.transfer_batch_item_count != null && (
+                  <div className="mt-2 flex items-center justify-between border-t border-outline-variant pt-2">
+                    <span className="text-on-surface-variant">
+                      Batched with {Math.max(0, t.transfer_batch_item_count - 1)} other item(s) to {t.transfer_to_store}
+                    </span>
+                    <span className="font-semibold tabular-nums text-on-secondary-container">{formatUSD(t.transfer_batch_value)}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </Link>
         ))}
       </div>

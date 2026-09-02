@@ -84,17 +84,16 @@ def list_transfers(store: str):
     rows = con.execute("""
         SELECT
             r.item_id, r.product_name, r.barcode, r.current_stock, r.full_price,
-            r.action,
-            regexp_extract(r.action, 'Transfer to ([A-Z0-9_]+)', 1) AS transfer_to_store,
+            r.action, r.transfer_target_store,
             r2.current_stock AS transfer_to_current_stock,
-            d2.baseline_daily_demand AS transfer_to_daily_demand
+            d2.baseline_daily_demand AS transfer_to_daily_demand,
+            r.transfer_item_value, r.transfer_solo_cost_effective, r.transfer_shipment_cost,
+            r.transfer_batch_value, r.transfer_batch_item_count
         FROM risk_scores r
         LEFT JOIN risk_scores r2
-            ON r2.store = regexp_extract(r.action, 'Transfer to ([A-Z0-9_]+)', 1)
-           AND r2.item_id = r.item_id
+            ON r2.store = r.transfer_target_store AND r2.item_id = r.item_id
         LEFT JOIN discount_recommendations d2
-            ON d2.store = regexp_extract(r.action, 'Transfer to ([A-Z0-9_]+)', 1)
-           AND d2.item_id = r.item_id
+            ON d2.store = r.transfer_target_store AND d2.item_id = r.item_id
         WHERE r.store = ? AND r.risk_score = 'Critical' AND r.action LIKE 'Transfer to%'
         ORDER BY r.current_stock DESC
     """, [store]).fetchall()
@@ -107,7 +106,18 @@ def list_transfers(store: str):
             "transfer_to_store": to_store,
             "transfer_to_current_stock": round(to_stock, 1) if to_stock is not None else None,
             "transfer_to_daily_demand": round(to_demand, 1) if to_demand is not None else None,
+            # Shipment economics (Task #11) - see scripts/08_transfer_cost_model.py.
+            # This item's OWN stock value is almost never enough to justify a
+            # dedicated truck on its own (transfer_solo_cost_effective is False
+            # for the vast majority of rows); it only becomes worth moving once
+            # batched with every other item queued for the same destination.
+            "transfer_item_value": round(item_value, 2) if item_value is not None else None,
+            "transfer_solo_cost_effective": solo_ok,
+            "transfer_shipment_cost": shipment_cost,
+            "transfer_batch_value": round(batch_value, 2) if batch_value is not None else None,
+            "transfer_batch_item_count": int(batch_n) if batch_n is not None else None,
         }
         for (item_id, product_name, barcode, current_stock, full_price, action,
-             to_store, to_stock, to_demand) in rows
+             to_store, to_stock, to_demand,
+             item_value, solo_ok, shipment_cost, batch_value, batch_n) in rows
     ]

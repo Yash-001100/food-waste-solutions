@@ -65,6 +65,12 @@ export interface TransferCandidate {
   transfer_to_store?: string | null;
   transfer_to_current_stock?: number | null;
   transfer_to_daily_demand?: number | null;
+  // Shipment economics (Task #11) - see scripts/08_transfer_cost_model.py.
+  transfer_item_value?: number | null;
+  transfer_solo_cost_effective?: boolean | null;
+  transfer_shipment_cost?: number | null;
+  transfer_batch_value?: number | null;
+  transfer_batch_item_count?: number | null;
 }
 
 export type ActionType = "markdown" | "transfer" | "donate" | "dispose" | "monitor";
