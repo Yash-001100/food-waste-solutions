@@ -89,12 +89,22 @@ class AppliedAction(BaseModel):
     # actions.py's _estimate_value_saved for the (disclosed, approximate)
     # methodology per action type.
     value_saved: Optional[float] = None
+    # Only set for action_type == "dispose": the real retail value written
+    # off (stock_at_action x full_price, live-joined from risk_scores since
+    # full_price doesn't change in this dataset). value_saved stays 0 for
+    # dispose - nothing was recovered - so without this field a disposal
+    # looked identical to a no-op in the UI. None for every other action
+    # type and for pre-migration rows that have no stock_at_action snapshot.
+    value_lost: Optional[float] = None
 
 
 class ActionHistorySummary(BaseModel):
     total_value_saved: float
     actions_taken: int
     top_action_type: Optional[str] = None
+    # Sum of value_lost above across this store's non-reverted dispose
+    # actions - the write-off counterpart to total_value_saved.
+    total_value_lost: float = 0.0
 
 
 # --- Analytics (Task #10): real M5 daily sales + discount-response data,
@@ -151,6 +161,9 @@ class OutcomeSlice(BaseModel):
     label: str
     count: int
     value_saved: float
+    # Real write-off value for this slice (non-zero only for "Disposed") -
+    # see AppliedAction.value_lost for the methodology.
+    value_lost: float = 0.0
 
 
 class OutcomesResponse(BaseModel):
@@ -173,5 +186,7 @@ class TransactionLogRow(BaseModel):
     quantity: Optional[float] = None
     full_price: Optional[float] = None
     value_saved: Optional[float] = None
+    # Only set for action_type "dispose" - see AppliedAction.value_lost.
+    value_lost: Optional[float] = None
     status: str
     applied_at: str

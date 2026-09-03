@@ -79,6 +79,12 @@ def apply_action(req: ApplyActionRequest, current_user: CurrentUser = Depends(ge
         req.action_type, req.discount_pct, stock, full_price,
         shelf_life_days, baseline_daily_demand, elasticity_used,
     )
+    # The real write-off: disposing writes off the full retail value of the
+    # stock, recovering nothing. Not persisted as its own column - full_price
+    # is static in this dataset, so it's cheap to recompute the same way on
+    # every read (see action_history/action_history_summary/outcomes) rather
+    # than adding a migration for it.
+    value_lost = round(stock * full_price, 2) if req.action_type == "dispose" else None
 
     row = con.execute("""
         INSERT INTO applied_actions (store, item_id, action_type, discount_pct, applied_by, value_saved, stock_at_action)
@@ -89,6 +95,7 @@ def apply_action(req: ApplyActionRequest, current_user: CurrentUser = Depends(ge
     cols = ["id", "store", "item_id", "action_type", "discount_pct", "applied_by", "applied_at", "status", "value_saved"]
     result = dict(zip(cols, row))
     result["applied_at"] = str(result["applied_at"])
+    result["value_lost"] = value_lost
     return AppliedAction(**result)
 
 
@@ -125,6 +132,9 @@ def revert_action(action_id: int, current_user: CurrentUser = Depends(get_curren
     cols = ["id", "store", "item_id", "action_type", "discount_pct", "applied_by", "applied_at", "status", "value_saved"]
     result = dict(zip(cols, updated))
     result["applied_at"] = str(result["applied_at"])
+    # Reverted actions drop out of every total, "lost" included - see the
+    # revert docstring above.
+    result["value_lost"] = None
     return AppliedAction(**result)
 
 
@@ -143,10 +153,15 @@ def action_history(
     # practice `applied_by` is always that store's single account.
     target_store = (store or current_user.store).upper()
     rows = con.execute("""
-        SELECT id, store, item_id, action_type, discount_pct, applied_by, applied_at, status, value_saved
-        FROM applied_actions WHERE store = ? ORDER BY applied_at DESC
+        SELECT aa.id, aa.store, aa.item_id, aa.action_type, aa.discount_pct, aa.applied_by,
+               aa.applied_at, aa.status, aa.value_saved,
+               CASE WHEN aa.action_type = 'dispose' THEN round(aa.stock_at_action * rs.full_price, 2) END AS value_lost
+        FROM applied_actions aa
+        LEFT JOIN risk_scores rs ON rs.store = aa.store AND rs.item_id = aa.item_id
+        WHERE aa.store = ? ORDER BY aa.applied_at DESC
     """, [target_store]).fetchall()
-    cols = ["id", "store", "item_id", "action_type", "discount_pct", "applied_by", "applied_at", "status", "value_saved"]
+    cols = ["id", "store", "item_id", "action_type", "discount_pct", "applied_by", "applied_at", "status",
+            "value_saved", "value_lost"]
     out = []
     for r in rows:
         d = dict(zip(cols, r))
@@ -169,8 +184,11 @@ def action_history_summary(
     con = get_connection()
     target_store = (store or current_user.store).upper()
     total_row = con.execute("""
-        SELECT count(*), coalesce(sum(value_saved), 0.0)
-        FROM applied_actions WHERE store = ? AND status != 'reverted'
+        SELECT count(*), coalesce(sum(aa.value_saved), 0.0),
+               coalesce(sum(CASE WHEN aa.action_type = 'dispose' THEN aa.stock_at_action * rs.full_price ELSE 0 END), 0.0)
+        FROM applied_actions aa
+        LEFT JOIN risk_scores rs ON rs.store = aa.store AND rs.item_id = aa.item_id
+        WHERE aa.store = ? AND aa.status != 'reverted'
     """, [target_store]).fetchone()
     top_row = con.execute("""
         SELECT action_type FROM applied_actions WHERE store = ? AND status != 'reverted'
@@ -179,5 +197,6 @@ def action_history_summary(
     return ActionHistorySummary(
         actions_taken=total_row[0],
         total_value_saved=round(total_row[1], 2),
+        total_value_lost=round(total_row[2], 2),
         top_action_type=top_row[0] if top_row else None,
     )

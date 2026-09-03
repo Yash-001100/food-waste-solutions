@@ -141,12 +141,17 @@ export interface AppliedAction {
   applied_at: string;
   status: string;
   value_saved?: number | null;
+  // Only set for action_type "dispose" - the real retail value written off
+  // (stock_at_action x full_price). value_saved stays 0 for dispose, since
+  // nothing was recovered, so without this a disposal read as a no-op.
+  value_lost?: number | null;
 }
 
 export interface ActionHistorySummary {
   total_value_saved: number;
   actions_taken: number;
   top_action_type: string | null;
+  total_value_lost: number;
 }
 
 export interface AuthedUser {
@@ -303,6 +308,8 @@ export interface OutcomeSlice {
   label: string;
   count: number;
   value_saved: number;
+  // Real write-off value for this slice - non-zero only for "Disposed".
+  value_lost: number;
 }
 
 export interface OutcomesResponse {
@@ -321,6 +328,8 @@ export interface TransactionLogRow {
   quantity: number | null;
   full_price: number | null;
   value_saved: number | null;
+  // Only set for action_type "dispose" - see AppliedAction.value_lost.
+  value_lost: number | null;
   status: string;
   applied_at: string;
 }

@@ -208,7 +208,8 @@ def outcomes(store: Optional[str] = Query(None), current_user: CurrentUser = Dep
                 ELSE 'Other'
             END AS label,
             count(*) AS n,
-            coalesce(sum(aa.value_saved), 0.0) AS value_saved
+            coalesce(sum(aa.value_saved), 0.0) AS value_saved,
+            coalesce(sum(CASE WHEN aa.action_type = 'dispose' THEN aa.stock_at_action * rs.full_price ELSE 0 END), 0.0) AS value_lost
         FROM applied_actions aa
         LEFT JOIN risk_scores rs ON rs.store = aa.store AND rs.item_id = aa.item_id
         {where}
@@ -219,7 +220,7 @@ def outcomes(store: Optional[str] = Query(None), current_user: CurrentUser = Dep
     ).fetchall()
 
     total = sum(r[1] for r in rows)
-    slices = [OutcomeSlice(label=r[0], count=r[1], value_saved=round(r[2], 2)) for r in rows]
+    slices = [OutcomeSlice(label=r[0], count=r[1], value_saved=round(r[2], 2), value_lost=round(r[3], 2)) for r in rows]
     return OutcomesResponse(store=store, total=total, slices=slices)
 
 
@@ -249,7 +250,9 @@ def transaction_log(
     rows = con.execute(
         f"""
         SELECT aa.id, aa.store, aa.item_id, rs.product_name, aa.action_type, aa.discount_pct,
-               aa.stock_at_action, rs.full_price, aa.value_saved, aa.status, aa.applied_at
+               aa.stock_at_action, rs.full_price, aa.value_saved,
+               CASE WHEN aa.action_type = 'dispose' THEN round(aa.stock_at_action * rs.full_price, 2) END AS value_lost,
+               aa.status, aa.applied_at
         FROM applied_actions aa
         LEFT JOIN risk_scores rs ON rs.store = aa.store AND rs.item_id = aa.item_id
         {where}
@@ -260,7 +263,7 @@ def transaction_log(
     ).fetchall()
 
     cols = ["id", "store", "item_id", "product_name", "action_type", "discount_pct",
-            "quantity", "full_price", "value_saved", "status", "applied_at"]
+            "quantity", "full_price", "value_saved", "value_lost", "status", "applied_at"]
     out = []
     for r in rows:
         d = dict(zip(cols, r))

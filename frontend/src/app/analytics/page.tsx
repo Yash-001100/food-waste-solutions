@@ -141,6 +141,9 @@ export default function AnalyticsPage() {
         label: s.label,
         value: s.count,
         color: OUTCOME_COLOR[s.label] ?? "var(--color-outline-variant)",
+        // Real dollar figure alongside the count: a write-off for Disposed,
+        // recovered value for everything else that has one.
+        sub: s.value_lost > 0 ? `-${formatUSD(s.value_lost)}` : s.value_saved > 0 ? `+${formatUSD(s.value_saved)}` : undefined,
       })),
     [outcomes]
   );
@@ -334,7 +337,7 @@ export default function AnalyticsPage() {
                   <th className="px-4 py-2.5 font-semibold text-right">Qty</th>
                   <th className="px-4 py-2.5 font-semibold text-right">Price</th>
                   <th className="px-4 py-2.5 font-semibold text-right">Discount</th>
-                  <th className="px-4 py-2.5 font-semibold text-right">Value saved</th>
+                  <th className="px-4 py-2.5 font-semibold text-right">Value impact</th>
                 </tr>
               </thead>
               <tbody>
@@ -353,8 +356,24 @@ export default function AnalyticsPage() {
                       <td className="px-4 py-2.5 text-right tabular-nums text-on-surface-variant">
                         {row.discount_pct != null ? `${row.discount_pct}%` : "—"}
                       </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums text-on-secondary-container">
-                        {!reverted && row.value_saved ? formatUSD(row.value_saved) : "$0.00"}
+                      <td
+                        className={`px-4 py-2.5 text-right tabular-nums ${
+                          reverted
+                            ? "text-on-surface-variant"
+                            : row.value_lost
+                              ? "text-error"
+                              : row.value_saved
+                                ? "text-on-secondary-container"
+                                : "text-on-surface-variant"
+                        }`}
+                      >
+                        {reverted
+                          ? "$0.00"
+                          : row.value_lost
+                            ? `-${formatUSD(row.value_lost)}`
+                            : row.value_saved
+                              ? formatUSD(row.value_saved)
+                              : "$0.00"}
                       </td>
                     </tr>
                   );
@@ -371,7 +390,9 @@ export default function AnalyticsPage() {
         Sales history and discount-response numbers come straight from the real M5 dataset (2011-2016) - the same data
         described in the project README - not a live feed. &quot;Qty&quot; in the transaction log is the stock on hand at
         the moment each action was applied, frozen at that time; rows logged before this page existed show &quot;—&quot;
-        since that snapshot wasn&apos;t captured yet.
+        since that snapshot wasn&apos;t captured yet. Disposed items show a real dollar figure in red - the full
+        retail value written off - rather than the $0.00 they showed before, since disposing recovers nothing, unlike
+        a markdown, transfer, or donation.
       </p>
     </div>
   );

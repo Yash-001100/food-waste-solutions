@@ -53,8 +53,15 @@ export default function ActionHistoryPage() {
       {revertError && <p className="text-sm text-error">{revertError}</p>}
 
       {summary && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <StatTile label="Total value saved" value={formatUSD(summary.total_value_saved)} sub="Estimated, vs. doing nothing" />
+          <div className="rounded-lg border border-outline-variant bg-surface p-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Value lost to disposal</p>
+            <p className="text-3xl font-bold tabular-nums tracking-tight text-error">
+              {summary.total_value_lost > 0 ? `-${formatUSD(summary.total_value_lost)}` : formatUSD(0)}
+            </p>
+            <p className="mt-1 text-xs text-on-surface-variant">Full retail value written off</p>
+          </div>
           <StatTile label="Actions taken" value={summary.actions_taken.toLocaleString()} sub="Reverted actions don't count" />
           <StatTile label="Top action type" value={summary.top_action_type ?? "—"} sub="By count, this store" />
         </div>
@@ -69,7 +76,7 @@ export default function ActionHistoryPage() {
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Applied by</th>
               <th className="px-4 py-3 font-semibold">When</th>
-              <th className="px-4 py-3 font-semibold text-right">Value saved</th>
+              <th className="px-4 py-3 font-semibold text-right">Value impact</th>
               <th className="px-4 py-3 font-semibold text-right">&nbsp;</th>
             </tr>
           </thead>
@@ -96,10 +103,22 @@ export default function ActionHistoryPage() {
                   <td className="px-4 py-3 text-xs text-on-surface-variant">{a.applied_at.split(".")[0]}</td>
                   <td
                     className={`px-4 py-3 text-right tabular-nums ${
-                      !reverted && a.value_saved ? "text-on-secondary-container" : "text-on-surface-variant"
+                      reverted
+                        ? "text-on-surface-variant"
+                        : a.value_lost
+                          ? "text-error"
+                          : a.value_saved
+                            ? "text-on-secondary-container"
+                            : "text-on-surface-variant"
                     }`}
                   >
-                    {!reverted && a.value_saved ? `+${formatUSD(a.value_saved)}` : "$0.00"}
+                    {reverted
+                      ? "$0.00"
+                      : a.value_lost
+                        ? `-${formatUSD(a.value_lost)}`
+                        : a.value_saved
+                          ? `+${formatUSD(a.value_saved)}`
+                          : "$0.00"}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {!reverted && (
@@ -128,7 +147,10 @@ export default function ActionHistoryPage() {
         it was never wired to actually move stock - it just marks the log entry as reverted and drops it from the
         totals above, so a mistaken click doesn&apos;t misrepresent what this store actually did. This store also has
         one shared demo login, so &quot;Applied by&quot; is always that account - there&apos;s no real multi-associate
-        staff directory behind this demo (see the project README).
+        staff directory behind this demo (see the project README). &quot;Value lost to disposal&quot; is the real
+        retail value of stock logged as disposed (quantity at the time of that action x its full price) - unlike
+        markdown/transfer/donate, disposing recovers nothing, so it shows as a loss rather than as an undifferentiated
+        $0.00.
       </p>
     </div>
   );

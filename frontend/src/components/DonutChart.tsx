@@ -4,6 +4,10 @@ export interface DonutSlice {
   label: string;
   value: number;
   color: string;
+  // Optional small annotation shown next to the count in the legend (e.g. a
+  // real dollar figure for that slice) - the arc itself still sizes by
+  // `value` (count), this is just extra context alongside it.
+  sub?: string;
 }
 
 /**
@@ -65,8 +69,11 @@ export function DonutChart({ slices, centerLabel }: { slices: DonutSlice[]; cent
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: s.color }} />
               {s.label}
             </span>
-            <span className="tabular-nums text-on-surface-variant">
-              {s.value.toLocaleString()} ({total > 0 ? Math.round((s.value / total) * 100) : 0}%)
+            <span className="text-right">
+              <span className="tabular-nums text-on-surface-variant">
+                {s.value.toLocaleString()} ({total > 0 ? Math.round((s.value / total) * 100) : 0}%)
+              </span>
+              {s.sub && <span className="ml-1.5 tabular-nums text-xs text-on-surface-variant">· {s.sub}</span>}
             </span>
           </div>
         ))}
