@@ -5,8 +5,32 @@ from typing import List
 
 from database import get_connection, PROC
 from schemas import StoreSummary
+from inventory import compute_receipt_overrides
 
 router = APIRouter(tags=["stores"])
+
+
+def _patch_store_counts(counts: dict, overrides_for_store: list) -> dict:
+    """
+    Adjusts a store's low/medium/high/critical counts and
+    potential_revenue_at_risk for every item that's had a real stock
+    receipt logged (see inventory.py) - the base SQL aggregate below still
+    reflects the pipeline's original risk tiers, so each override moves one
+    item from its old tier/revenue contribution to its recomputed one,
+    rather than re-scanning every item at the store.
+    """
+    counts = dict(counts)
+    for ov in overrides_for_store:
+        old_key, new_key = ov["old_risk_score"].lower(), ov["risk_score"].lower()
+        if old_key != new_key:
+            counts[old_key] -= 1
+            counts[new_key] += 1
+        old_contrib = (ov["full_price"] * ov["old_current_stock"] * (1 - ov["old_do_nothing_sellthrough_pct"] / 100.0)
+                       if ov["old_risk_score"] in ("High", "Critical") else 0.0)
+        new_contrib = (ov["full_price"] * ov["current_stock"] * (1 - ov["do_nothing_sellthrough_pct"] / 100.0)
+                       if ov["risk_score"] in ("High", "Critical") else 0.0)
+        counts["potential_revenue_at_risk"] = round(counts["potential_revenue_at_risk"] + (new_contrib - old_contrib), 2)
+    return counts
 
 STORES = ["CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3"]
 
@@ -56,7 +80,16 @@ def list_stores():
         ORDER BY store
     """).fetchall()
     cols = ["store", "total_items", "low", "medium", "high", "critical", "potential_revenue_at_risk"]
-    return [StoreSummary(**dict(zip(cols, r))) for r in rows]
+    by_store = {r[0]: dict(zip(cols, r)) for r in rows}
+
+    overrides_by_store: dict[str, list] = {}
+    for (store_, _item_id), ov in compute_receipt_overrides(con).items():
+        overrides_by_store.setdefault(store_, []).append(ov)
+    for store_, overrides in overrides_by_store.items():
+        if store_ in by_store:
+            by_store[store_] = _patch_store_counts(by_store[store_], overrides)
+
+    return [StoreSummary(**by_store[s]) for s in sorted(by_store)]
 
 
 @router.get("/stores/map")
@@ -79,6 +112,16 @@ def store_map():
     critical_counts = dict(con.execute(
         "SELECT store, count(*) FROM risk_scores WHERE risk_score = 'Critical' GROUP BY store"
     ).fetchall())
+    # A real stock receipt (see inventory.py) can push an item into or out of
+    # Critical - patch the base counts the same way the store summary does,
+    # so a store's marker size on the map agrees with its own overview page.
+    for (store_, _item_id), ov in compute_receipt_overrides(con).items():
+        if ov["old_risk_score"] == ov["risk_score"]:
+            continue
+        if ov["old_risk_score"] == "Critical":
+            critical_counts[store_] = critical_counts.get(store_, 0) - 1
+        if ov["risk_score"] == "Critical":
+            critical_counts[store_] = critical_counts.get(store_, 0) + 1
 
     lane_rows = con.execute("""
         SELECT origin_store, destination_store,
@@ -140,7 +183,9 @@ def get_store(store: str):
         FROM risk_scores WHERE store = ? GROUP BY store
     """, [store]).fetchone()
     cols = ["store", "total_items", "low", "medium", "high", "critical", "potential_revenue_at_risk"]
-    return StoreSummary(**dict(zip(cols, row)))
+    counts = dict(zip(cols, row))
+    counts = _patch_store_counts(counts, list(compute_receipt_overrides(con, store=store).values()))
+    return StoreSummary(**counts)
 
 
 @router.get("/stores/{store}/distances")

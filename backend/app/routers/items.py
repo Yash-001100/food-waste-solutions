@@ -4,10 +4,12 @@ from fastapi import APIRouter, HTTPException, Query
 from database import get_connection
 from schemas import ItemSummary, ItemDetail, ScheduleDay
 from optimizer import build_countdown_schedule
+from inventory import get_receipts_by_item, recompute_for_receipt
 
 router = APIRouter(tags=["items"])
 
 VALID_RISK = {"Low", "Medium", "High", "Critical"}
+RISK_ORDER = {"Critical": 0, "High": 1, "Medium": 2, "Low": 3}
 
 ITEM_SUMMARY_COLS = [
     "store", "item_id", "product_name", "barcode", "shelf_life_tier", "shelf_life_days",
@@ -28,20 +30,41 @@ def list_items(store: str, risk: Optional[str] = Query(None, description="Filter
         raise HTTPException(status_code=400, detail=f"risk must be one of {sorted(VALID_RISK)}")
 
     con = get_connection()
-    cols_sql = ", ".join(ITEM_SUMMARY_COLS_R) + ", c.category"
-    base_sql = f"SELECT {cols_sql} FROM risk_scores r LEFT JOIN item_catalog c USING (item_id) WHERE r.store = ?"
+    # Always pull every item for the store (not filtered by risk in SQL) and
+    # always join discount_recommendations - a stock receipt can change an
+    # item's risk tier (see inventory.py), so filtering against the STALE
+    # risk_scores.risk_score column would hide/show the wrong rows for any
+    # item that's had a receipt logged. Cheap at this data scale (a few
+    # hundred to ~1,500 rows per store) to filter/sort in Python instead.
+    cols_sql = ", ".join(ITEM_SUMMARY_COLS_R) + ", c.category, d.baseline_daily_demand, d.elasticity_used"
+    rows = con.execute(f"""
+        SELECT {cols_sql}
+        FROM risk_scores r
+        JOIN discount_recommendations d USING (store, item_id)
+        LEFT JOIN item_catalog c USING (item_id)
+        WHERE r.store = ?
+    """, [store]).fetchall()
+
+    extra_cols = ITEM_SUMMARY_COLS + ["category", "baseline_daily_demand", "elasticity_used"]
+    items = [dict(zip(extra_cols, r)) for r in rows]
+
+    receipts = get_receipts_by_item(con, store)
+    if receipts:
+        for item in items:
+            received = receipts.get(item["item_id"])
+            if received:
+                item.update(recompute_for_receipt(
+                    item["current_stock"], item["full_price"], item["shelf_life_days"],
+                    item["baseline_daily_demand"], item["elasticity_used"], received,
+                ))
+                item["received_since_baseline"] = received
+
     if risk:
-        rows = con.execute(
-            f"{base_sql} AND r.risk_score = ? ORDER BY r.do_nothing_sellthrough_pct ASC",
-            [store, risk.capitalize()],
-        ).fetchall()
-    else:
-        rows = con.execute(
-            f"{base_sql} ORDER BY CASE r.risk_score WHEN 'Critical' THEN 0 WHEN 'High' THEN 1 "
-            f"WHEN 'Medium' THEN 2 ELSE 3 END, r.do_nothing_sellthrough_pct ASC",
-            [store],
-        ).fetchall()
-    return [ItemSummary(**dict(zip(ITEM_SUMMARY_COLS + ["category"], r))) for r in rows]
+        items = [i for i in items if i["risk_score"] == risk.capitalize()]
+    items.sort(key=lambda i: (RISK_ORDER[i["risk_score"]], i["do_nothing_sellthrough_pct"]))
+
+    out_cols = ITEM_SUMMARY_COLS + ["category", "received_since_baseline"]
+    return [ItemSummary(**{k: i.get(k) for k in out_cols}) for i in items]
 
 
 @router.get("/items/{store}/{item_id}", response_model=ItemDetail)
@@ -66,9 +89,22 @@ def get_item(store: str, item_id: str):
         row,
     ))
 
+    # Same live receipts overlay as list_items above - a store's item detail
+    # page and its risk board must always agree on current_stock/risk_score
+    # for the same item.
+    received = get_receipts_by_item(con, store).get(item_id)
+    if received:
+        data.update(recompute_for_receipt(
+            data["current_stock"], data["full_price"], data["shelf_life_days"],
+            data["baseline_daily_demand"], data["elasticity_used"], received,
+        ))
+        data["received_since_baseline"] = received
+
     # Live countdown schedule, computed fresh from the optimizer rather than
     # only for the two pre-baked examples - cheap enough (a few hundred
-    # iterations at most) to run per request.
+    # iterations at most) to run per request. Uses current_stock AFTER the
+    # receipt overlay above, so a freshly-restocked item's schedule reflects
+    # what's actually on the shelf now.
     schedule = build_countdown_schedule(
         data["baseline_daily_demand"], data["elasticity_used"], data["shelf_life_days"],
         data["current_stock"], data["full_price"],

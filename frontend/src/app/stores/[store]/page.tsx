@@ -196,6 +196,9 @@ export default function StoreRiskBoard() {
                 <td className="px-4 py-3 text-right tabular-nums">
                   {item.current_stock.toLocaleString()}
                   <span className="text-on-surface-variant"> · {formatUSD(item.full_price)}</span>
+                  {!!item.received_since_baseline && (
+                    <p className="text-xs font-medium text-secondary">+{item.received_since_baseline.toLocaleString()} received</p>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-on-surface-variant">{item.action}</td>
               </tr>

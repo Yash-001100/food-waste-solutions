@@ -32,6 +32,11 @@ export interface ItemSummary {
   revenue_max_discount_pct: number;
   reachable_target: boolean;
   category?: string | null;
+  // Set only when a real stock receipt has been logged for this item (see
+  // /receive-stock) - current_stock and every field above already reflect
+  // it; this flags "this includes a real shipment," not a silent number
+  // bump, on the risk board and item detail.
+  received_since_baseline?: number | null;
 }
 
 export interface ScheduleDay {
@@ -127,6 +132,36 @@ export interface StoreMapResponse {
   lanes: StoreMapLane[];
   rate_per_mile: number;
   avg_truck_speed_mph: number;
+}
+
+// --- Receive Stock: a real shipment, logged from a CSV instead of typing
+// each item's new stock into a form by hand. See backend/app/inventory.py.
+
+export interface RejectedReceiptRow {
+  row: number;
+  item_id?: string | null;
+  reason: string;
+}
+
+export interface ReceiveStockResponse {
+  store: string;
+  filename: string;
+  rows_accepted: number;
+  rows_rejected: number;
+  items_updated: number;
+  rejected: RejectedReceiptRow[];
+}
+
+export interface StockReceipt {
+  id: number;
+  store: string;
+  item_id: string;
+  product_name: string;
+  qty_received: number;
+  received_by: string;
+  received_at: string;
+  source_filename?: string | null;
+  risk_score_now: RiskTier;
 }
 
 export type ActionType = "markdown" | "transfer" | "donate" | "dispose" | "monitor";
@@ -251,6 +286,19 @@ export const api = {
   async actionHistorySummary(token: string, store?: string) {
     const qs = store ? `?store=${store}` : "";
     return request<ActionHistorySummary>(`/actions/history/summary${qs}`, {}, token);
+  },
+
+  async receiveStock(token: string, store: string, file: File) {
+    const body = new FormData();
+    body.append("file", file);
+    // No Content-Type header here on purpose - the browser sets the
+    // multipart boundary itself when the body is a FormData; setting it
+    // manually breaks the upload.
+    return request<ReceiveStockResponse>(`/stores/${store}/receive-stock`, { method: "POST", body }, token);
+  },
+
+  async listReceipts(store: string, limit = 25) {
+    return request<StockReceipt[]>(`/stores/${store}/receipts?limit=${limit}`);
   },
 };
 

@@ -111,6 +111,34 @@ def _init_schema(con):
         con.execute("ALTER TABLE applied_actions ADD COLUMN stock_at_action DOUBLE")
         con.execute("CHECKPOINT")
 
+    # stock_receipts - a real "a shipment came in" event an associate logs by
+    # uploading a CSV (see routers/inventory.py), instead of typing each
+    # item's new stock into a form by hand. This is a brand new table, not a
+    # migration on an existing one, so the ALTER-TABLE WAL-replay bug
+    # documented above doesn't apply here - CREATE TABLE IF NOT EXISTS is
+    # safe on its own. Deliberately append-only and additive, same
+    # philosophy as applied_actions: nothing here ever rewrites
+    # risk_scores.parquet directly. Every current_stock used anywhere in
+    # this app is really "the pipeline's baseline stock + sum(qty_received)
+    # for that store-item since" - see inventory.py for where that overlay
+    # is applied and risk/action fields are recomputed live from it with
+    # the SAME optimizer used everywhere else (recommend_discount), not a
+    # second methodology.
+    con.execute("""
+        CREATE SEQUENCE IF NOT EXISTS stock_receipts_id_seq START 1
+    """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS stock_receipts (
+            id              BIGINT PRIMARY KEY DEFAULT nextval('stock_receipts_id_seq'),
+            store           VARCHAR NOT NULL,
+            item_id         VARCHAR NOT NULL,
+            qty_received    DOUBLE NOT NULL,
+            received_by     VARCHAR NOT NULL,
+            received_at     TIMESTAMP NOT NULL DEFAULT current_timestamp,
+            source_filename VARCHAR
+        )
+    """)
+
 
 def _register_views(con):
     con.execute(f"""

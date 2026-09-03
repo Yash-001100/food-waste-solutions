@@ -45,6 +45,13 @@ class ItemSummary(BaseModel):
     # just item detail) so a store-wide view like the risk treemap can label
     # tiles by department without a second round trip per item.
     category: Optional[str] = None
+    # Set only when a real stock receipt has been logged for this item (see
+    # inventory.py/routers/inventory.py) - current_stock and every
+    # stock-dependent field above already reflect it; this is surfaced
+    # separately so the UI can flag "this number includes a real shipment,
+    # not just the pipeline's original baseline" instead of the change
+    # looking like a silent number bump.
+    received_since_baseline: Optional[float] = None
 
 
 class ScheduleDay(BaseModel):
@@ -105,6 +112,41 @@ class ActionHistorySummary(BaseModel):
     # Sum of value_lost above across this store's non-reverted dispose
     # actions - the write-off counterpart to total_value_saved.
     total_value_lost: float = 0.0
+
+
+# --- Stock receipts: a real "a shipment came in" event an associate logs by
+# uploading a CSV, instead of typing every item's new stock into a form by
+# hand - see routers/inventory.py and inventory.py.
+
+
+class RejectedReceiptRow(BaseModel):
+    row: int  # 1-based line number in the uploaded file, header included
+    item_id: Optional[str] = None
+    reason: str
+
+
+class ReceiveStockResponse(BaseModel):
+    store: str
+    filename: str
+    rows_accepted: int
+    rows_rejected: int
+    items_updated: int
+    rejected: List[RejectedReceiptRow]
+
+
+class StockReceipt(BaseModel):
+    id: int
+    store: str
+    item_id: str
+    product_name: str
+    qty_received: float
+    received_by: str
+    received_at: str
+    source_filename: Optional[str] = None
+    # What this receipt did to the item's risk tier, for a quick "so what
+    # happened" read in the receipts history table - recomputed the same
+    # way as everywhere else (inventory.py), not stored redundantly.
+    risk_score_now: str
 
 
 # --- Analytics (Task #10): real M5 daily sales + discount-response data,

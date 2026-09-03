@@ -28,6 +28,35 @@ from typing import List
 
 CANDIDATE_DISCOUNTS_PCT = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
+# Same thresholds as scripts/07_risk_scoring.py's score_row/action_for.
+# Duplicated here rather than imported, on purpose - scripts/ is an offline
+# batch tool, not part of this runtime package (this module's own
+# recommend_discount mirrors, rather than imports, scripts/06's methodology
+# for the same reason). Needed here so inventory.py can recompute a
+# store-item's risk tier live, on the SAME formula, after a new stock
+# receipt changes its stock level.
+RISK_LOW_THRESH = 90.0
+RISK_MEDIUM_THRESH = 70.0
+
+
+def score_row(do_nothing_pct: float, reachable: bool) -> str:
+    if not reachable:
+        return "Critical"
+    if do_nothing_pct >= RISK_LOW_THRESH:
+        return "Low"
+    if do_nothing_pct >= RISK_MEDIUM_THRESH:
+        return "Medium"
+    return "High"
+
+
+def action_for(risk: str, waste_min_discount_pct: int) -> str:
+    return {
+        "Low": "Monitor",
+        "Medium": f"Small markdown ({waste_min_discount_pct}% off)",
+        "High": f"Deep markdown ({waste_min_discount_pct}% off)",
+        "Critical": "Transfer or donate",
+    }[risk]
+
 
 def demand_multiplier(discount_pct: float, elasticity: float) -> float:
     price_ratio = 1 - discount_pct / 100
