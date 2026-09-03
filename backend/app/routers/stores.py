@@ -53,6 +53,60 @@ def list_stores():
     return [StoreSummary(**dict(zip(cols, r))) for r in rows]
 
 
+@router.get("/stores/map")
+def store_map():
+    """
+    Every store's position and every currently active transfer route, for a
+    network-wide map view. Positions are the same disclosed stand-in cities
+    used throughout (scripts/08_transfer_cost_model.py) - real coordinates
+    for a real city, not the store's actual (never-disclosed) location.
+    Routes come straight from transfer_allocations, so a line only appears
+    here if that lane is real: matched by 07_risk_scoring.py AND already
+    cleared the cost-effectiveness check in 08 - never a hypothetical route.
+
+    Registered ABOVE /stores/{store} deliberately - FastAPI matches routes
+    in registration order, and "map" would otherwise be swallowed as a
+    {store} path parameter value.
+    """
+    data = _load_distances()
+    con = get_connection()
+    critical_counts = dict(con.execute(
+        "SELECT store, count(*) FROM risk_scores WHERE risk_score = 'Critical' GROUP BY store"
+    ).fetchall())
+
+    stores = [
+        {
+            "store": s,
+            "state": s.split("_")[0],
+            "city": info["city"],
+            "lat": info["lat"],
+            "lon": info["lon"],
+            "critical_items": critical_counts.get(s, 0),
+        }
+        for s, info in data["stores"].items()
+    ]
+
+    lane_rows = con.execute("""
+        SELECT origin_store, destination_store,
+               count(*) AS item_count,
+               round(sum(value_transferred), 2) AS batch_value,
+               avg(distance_miles) AS distance_miles,
+               avg(shipment_cost) AS shipment_cost
+        FROM transfer_allocations
+        GROUP BY origin_store, destination_store
+    """).fetchall()
+    lanes = [
+        {
+            "origin_store": o, "destination_store": d,
+            "item_count": int(n), "batch_value": v,
+            "distance_miles": round(dist, 1), "shipment_cost": round(cost, 2),
+        }
+        for o, d, n, v, dist, cost in lane_rows
+    ]
+
+    return {"stores": stores, "lanes": lanes, "rate_per_mile": data["rate_per_mile"]}
+
+
 @router.get("/stores/{store}", response_model=StoreSummary)
 def get_store(store: str):
     store = store.upper()

@@ -1,0 +1,508 @@
+{
+  "rate_per_mile": 2.4,
+  "stores": {
+    "CA_1": {
+      "city": "Los Angeles, CA",
+      "lat": 34.0522,
+      "lon": -118.2437
+    },
+    "CA_2": {
+      "city": "San Francisco, CA",
+      "lat": 37.7749,
+      "lon": -122.4194
+    },
+    "CA_3": {
+      "city": "Sacramento, CA",
+      "lat": 38.5816,
+      "lon": -121.4944
+    },
+    "CA_4": {
+      "city": "San Diego, CA",
+      "lat": 32.7157,
+      "lon": -117.1611
+    },
+    "TX_1": {
+      "city": "Houston, TX",
+      "lat": 29.7604,
+      "lon": -95.3698
+    },
+    "TX_2": {
+      "city": "Dallas, TX",
+      "lat": 32.7767,
+      "lon": -96.797
+    },
+    "TX_3": {
+      "city": "San Antonio, TX",
+      "lat": 29.4241,
+      "lon": -98.4936
+    },
+    "WI_1": {
+      "city": "Milwaukee, WI",
+      "lat": 43.0389,
+      "lon": -87.9065
+    },
+    "WI_2": {
+      "city": "Madison, WI",
+      "lat": 43.0731,
+      "lon": -89.4012
+    },
+    "WI_3": {
+      "city": "Green Bay, WI",
+      "lat": 44.5133,
+      "lon": -88.0133
+    }
+  },
+  "distances": [
+    {
+      "store_a": "CA_1",
+      "store_b": "CA_4",
+      "miles": 111.5
+    },
+    {
+      "store_a": "CA_1",
+      "store_b": "CA_2",
+      "miles": 347.4
+    },
+    {
+      "store_a": "CA_1",
+      "store_b": "CA_3",
+      "miles": 361.4
+    },
+    {
+      "store_a": "CA_1",
+      "store_b": "TX_3",
+      "miles": 1201.6
+    },
+    {
+      "store_a": "CA_1",
+      "store_b": "TX_2",
+      "miles": 1237.8
+    },
+    {
+      "store_a": "CA_1",
+      "store_b": "TX_1",
+      "miles": 1370.9
+    },
+    {
+      "store_a": "CA_1",
+      "store_b": "WI_2",
+      "miles": 1667.9
+    },
+    {
+      "store_a": "CA_1",
+      "store_b": "WI_1",
+      "miles": 1741.4
+    },
+    {
+      "store_a": "CA_1",
+      "store_b": "WI_3",
+      "miles": 1757.8
+    },
+    {
+      "store_a": "CA_2",
+      "store_b": "CA_3",
+      "miles": 75.0
+    },
+    {
+      "store_a": "CA_2",
+      "store_b": "CA_1",
+      "miles": 347.4
+    },
+    {
+      "store_a": "CA_2",
+      "store_b": "CA_4",
+      "miles": 458.3
+    },
+    {
+      "store_a": "CA_2",
+      "store_b": "TX_2",
+      "miles": 1480.9
+    },
+    {
+      "store_a": "CA_2",
+      "store_b": "TX_3",
+      "miles": 1487.5
+    },
+    {
+      "store_a": "CA_2",
+      "store_b": "TX_1",
+      "miles": 1642.3
+    },
+    {
+      "store_a": "CA_2",
+      "store_b": "WI_2",
+      "miles": 1762.9
+    },
+    {
+      "store_a": "CA_2",
+      "store_b": "WI_3",
+      "miles": 1835.0
+    },
+    {
+      "store_a": "CA_2",
+      "store_b": "WI_1",
+      "miles": 1838.3
+    },
+    {
+      "store_a": "CA_3",
+      "store_b": "CA_2",
+      "miles": 75.0
+    },
+    {
+      "store_a": "CA_3",
+      "store_b": "CA_1",
+      "miles": 361.4
+    },
+    {
+      "store_a": "CA_3",
+      "store_b": "CA_4",
+      "miles": 472.6
+    },
+    {
+      "store_a": "CA_3",
+      "store_b": "TX_2",
+      "miles": 1438.0
+    },
+    {
+      "store_a": "CA_3",
+      "store_b": "TX_3",
+      "miles": 1456.0
+    },
+    {
+      "store_a": "CA_3",
+      "store_b": "TX_1",
+      "miles": 1605.9
+    },
+    {
+      "store_a": "CA_3",
+      "store_b": "WI_2",
+      "miles": 1695.6
+    },
+    {
+      "store_a": "CA_3",
+      "store_b": "WI_3",
+      "miles": 1765.9
+    },
+    {
+      "store_a": "CA_3",
+      "store_b": "WI_1",
+      "miles": 1771.1
+    },
+    {
+      "store_a": "CA_4",
+      "store_b": "CA_1",
+      "miles": 111.5
+    },
+    {
+      "store_a": "CA_4",
+      "store_b": "CA_2",
+      "miles": 458.3
+    },
+    {
+      "store_a": "CA_4",
+      "store_b": "CA_3",
+      "miles": 472.6
+    },
+    {
+      "store_a": "CA_4",
+      "store_b": "TX_3",
+      "miles": 1126.3
+    },
+    {
+      "store_a": "CA_4",
+      "store_b": "TX_2",
+      "miles": 1181.6
+    },
+    {
+      "store_a": "CA_4",
+      "store_b": "TX_1",
+      "miles": 1301.1
+    },
+    {
+      "store_a": "CA_4",
+      "store_b": "WI_2",
+      "miles": 1663.9
+    },
+    {
+      "store_a": "CA_4",
+      "store_b": "WI_1",
+      "miles": 1736.0
+    },
+    {
+      "store_a": "CA_4",
+      "store_b": "WI_3",
+      "miles": 1759.0
+    },
+    {
+      "store_a": "TX_1",
+      "store_b": "TX_3",
+      "miles": 189.1
+    },
+    {
+      "store_a": "TX_1",
+      "store_b": "TX_2",
+      "miles": 224.8
+    },
+    {
+      "store_a": "TX_1",
+      "store_b": "WI_2",
+      "miles": 977.2
+    },
+    {
+      "store_a": "TX_1",
+      "store_b": "WI_1",
+      "miles": 1005.9
+    },
+    {
+      "store_a": "TX_1",
+      "store_b": "WI_3",
+      "miles": 1095.8
+    },
+    {
+      "store_a": "TX_1",
+      "store_b": "CA_4",
+      "miles": 1301.1
+    },
+    {
+      "store_a": "TX_1",
+      "store_b": "CA_1",
+      "miles": 1370.9
+    },
+    {
+      "store_a": "TX_1",
+      "store_b": "CA_3",
+      "miles": 1605.9
+    },
+    {
+      "store_a": "TX_1",
+      "store_b": "CA_2",
+      "miles": 1642.3
+    },
+    {
+      "store_a": "TX_2",
+      "store_b": "TX_1",
+      "miles": 224.8
+    },
+    {
+      "store_a": "TX_2",
+      "store_b": "TX_3",
+      "miles": 252.4
+    },
+    {
+      "store_a": "TX_2",
+      "store_b": "WI_2",
+      "miles": 816.9
+    },
+    {
+      "store_a": "TX_2",
+      "store_b": "WI_1",
+      "miles": 857.7
+    },
+    {
+      "store_a": "TX_2",
+      "store_b": "WI_3",
+      "miles": 938.0
+    },
+    {
+      "store_a": "TX_2",
+      "store_b": "CA_4",
+      "miles": 1181.6
+    },
+    {
+      "store_a": "TX_2",
+      "store_b": "CA_1",
+      "miles": 1237.8
+    },
+    {
+      "store_a": "TX_2",
+      "store_b": "CA_3",
+      "miles": 1438.0
+    },
+    {
+      "store_a": "TX_2",
+      "store_b": "CA_2",
+      "miles": 1480.9
+    },
+    {
+      "store_a": "TX_3",
+      "store_b": "TX_1",
+      "miles": 189.1
+    },
+    {
+      "store_a": "TX_3",
+      "store_b": "TX_2",
+      "miles": 252.4
+    },
+    {
+      "store_a": "TX_3",
+      "store_b": "WI_2",
+      "miles": 1069.0
+    },
+    {
+      "store_a": "TX_3",
+      "store_b": "WI_1",
+      "miles": 1108.4
+    },
+    {
+      "store_a": "TX_3",
+      "store_b": "CA_4",
+      "miles": 1126.3
+    },
+    {
+      "store_a": "TX_3",
+      "store_b": "WI_3",
+      "miles": 1190.0
+    },
+    {
+      "store_a": "TX_3",
+      "store_b": "CA_1",
+      "miles": 1201.6
+    },
+    {
+      "store_a": "TX_3",
+      "store_b": "CA_3",
+      "miles": 1456.0
+    },
+    {
+      "store_a": "TX_3",
+      "store_b": "CA_2",
+      "miles": 1487.5
+    },
+    {
+      "store_a": "WI_1",
+      "store_b": "WI_2",
+      "miles": 75.5
+    },
+    {
+      "store_a": "WI_1",
+      "store_b": "WI_3",
+      "miles": 102.0
+    },
+    {
+      "store_a": "WI_1",
+      "store_b": "TX_2",
+      "miles": 857.7
+    },
+    {
+      "store_a": "WI_1",
+      "store_b": "TX_1",
+      "miles": 1005.9
+    },
+    {
+      "store_a": "WI_1",
+      "store_b": "TX_3",
+      "miles": 1108.4
+    },
+    {
+      "store_a": "WI_1",
+      "store_b": "CA_4",
+      "miles": 1736.0
+    },
+    {
+      "store_a": "WI_1",
+      "store_b": "CA_1",
+      "miles": 1741.4
+    },
+    {
+      "store_a": "WI_1",
+      "store_b": "CA_3",
+      "miles": 1771.1
+    },
+    {
+      "store_a": "WI_1",
+      "store_b": "CA_2",
+      "miles": 1838.3
+    },
+    {
+      "store_a": "WI_2",
+      "store_b": "WI_1",
+      "miles": 75.5
+    },
+    {
+      "store_a": "WI_2",
+      "store_b": "WI_3",
+      "miles": 121.2
+    },
+    {
+      "store_a": "WI_2",
+      "store_b": "TX_2",
+      "miles": 816.9
+    },
+    {
+      "store_a": "WI_2",
+      "store_b": "TX_1",
+      "miles": 977.2
+    },
+    {
+      "store_a": "WI_2",
+      "store_b": "TX_3",
+      "miles": 1069.0
+    },
+    {
+      "store_a": "WI_2",
+      "store_b": "CA_4",
+      "miles": 1663.9
+    },
+    {
+      "store_a": "WI_2",
+      "store_b": "CA_1",
+      "miles": 1667.9
+    },
+    {
+      "store_a": "WI_2",
+      "store_b": "CA_3",
+      "miles": 1695.6
+    },
+    {
+      "store_a": "WI_2",
+      "store_b": "CA_2",
+      "miles": 1762.9
+    },
+    {
+      "store_a": "WI_3",
+      "store_b": "WI_1",
+      "miles": 102.0
+    },
+    {
+      "store_a": "WI_3",
+      "store_b": "WI_2",
+      "miles": 121.2
+    },
+    {
+      "store_a": "WI_3",
+      "store_b": "TX_2",
+      "miles": 938.0
+    },
+    {
+      "store_a": "WI_3",
+      "store_b": "TX_1",
+      "miles": 1095.8
+    },
+    {
+      "store_a": "WI_3",
+      "store_b": "TX_3",
+      "miles": 1190.0
+    },
+    {
+      "store_a": "WI_3",
+      "store_b": "CA_1",
+      "miles": 1757.8
+    },
+    {
+      "store_a": "WI_3",
+      "store_b": "CA_4",
+      "miles": 1759.0
+    },
+    {
+      "store_a": "WI_3",
+      "store_b": "CA_3",
+      "miles": 1765.9
+    },
+    {
+      "store_a": "WI_3",
+      "store_b": "CA_2",
+      "miles": 1835.0
+    }
+  ],
+  "source_note": "M5 discloses only a state label per store (no city/address/GPS), so each store is mapped to a real, distinct major city in its state as a disclosed stand-in; distances are the real haversine great-circle distance between those real coordinates."
+}

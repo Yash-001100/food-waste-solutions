@@ -95,6 +95,30 @@ export interface StoreDistancesResponse {
   distances: StoreDistance[];
 }
 
+export interface StoreMapPoint {
+  store: string;
+  state: string;
+  city: string;
+  lat: number;
+  lon: number;
+  critical_items: number;
+}
+
+export interface StoreMapLane {
+  origin_store: string;
+  destination_store: string;
+  item_count: number;
+  batch_value: number;
+  distance_miles: number;
+  shipment_cost: number;
+}
+
+export interface StoreMapResponse {
+  stores: StoreMapPoint[];
+  lanes: StoreMapLane[];
+  rate_per_mile: number;
+}
+
 export type ActionType = "markdown" | "transfer" | "donate" | "dispose" | "monitor";
 
 export interface AppliedAction {
@@ -183,6 +207,10 @@ export const api = {
 
   async storeDistances(store: string) {
     return request<StoreDistancesResponse>(`/stores/${store}/distances`);
+  },
+
+  async storeMap() {
+    return request<StoreMapResponse>(`/stores/map`);
   },
 
   async applyAction(

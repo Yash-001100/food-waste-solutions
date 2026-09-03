@@ -32,6 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     { href: `/stores/${user.store}`, label: "Risk board", icon: "warning" },
     { href: "/analytics", label: "Analytics", icon: "monitoring" },
     { href: `/stores/${user.store}/transfers`, label: "Transfers", icon: "swap_horiz" },
+    { href: "/store-map", label: "Store Map", icon: "map" },
     { href: "/actions", label: "Action history", icon: "history" },
   ];
 
