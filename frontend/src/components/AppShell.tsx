@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-outline-variant bg-surface-container-low">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-outline-variant bg-surface-container-low print:hidden">
         <div className="flex items-center gap-2.5 px-6 py-6">
           <span className="material-symbols-outlined text-primary" style={{ fontSize: 26 }}>
             eco

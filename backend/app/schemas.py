@@ -165,6 +165,7 @@ class StockTransfer(BaseModel):
     id: int
     item_id: str
     product_name: str
+    barcode: Optional[str] = None
     origin_store: str
     destination_store: str
     qty: float
@@ -173,9 +174,18 @@ class StockTransfer(BaseModel):
     shipped_at: str
     received_by: Optional[str] = None
     received_at: Optional[str] = None
+    # The item's real, unchanging full_price (risk_scores) and this
+    # shipment's value at that price (qty x full_price) - computed here
+    # from the shipped qty itself, so it stays correct even if the pipeline
+    # later re-runs and this exact lane no longer appears in
+    # transfer_allocations. Backs the $ line on the receipt view
+    # (frontend: /transfers/[transferId]).
+    full_price: Optional[float] = None
+    item_value: Optional[float] = None
     # Real economics from transfer_allocations, carried along for display -
     # not recomputed here, just the same numbers the Transfers page already
-    # showed before this was ever shipped.
+    # showed before this was ever shipped. Optional because a pipeline
+    # re-run can retire the exact lane this transfer came from.
     distance_miles: Optional[float] = None
     shipment_cost: Optional[float] = None
 

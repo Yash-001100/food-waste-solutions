@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError, TransferCandidate, StoreDistancesResponse, StockTransfer } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -16,6 +16,7 @@ function laneKey(itemId: string, destinationStore: string) {
 
 export default function TransfersPage() {
   const params = useParams<{ store: string }>();
+  const router = useRouter();
   const store = params.store.toUpperCase();
   const { user, token } = useAuth();
   const [transfers, setTransfers] = useState<TransferCandidate[] | null>(null);
@@ -211,18 +212,44 @@ export default function TransfersPage() {
 
               if (shipped?.status === "in_transit") {
                 return (
-                  <p className="mt-3 flex items-center gap-1.5 rounded-md bg-secondary-container px-3 py-2 text-xs font-medium text-on-secondary-container">
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>local_shipping</span>
-                    Shipped — awaiting confirmation at {shipped.destination_store}
-                  </p>
+                  <div className="mt-3 flex items-center justify-between gap-2 rounded-md bg-secondary-container px-3 py-2 text-xs font-medium text-on-secondary-container">
+                    <span className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>local_shipping</span>
+                      Shipped — awaiting confirmation at {shipped.destination_store}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        router.push(`/transfers/${shipped.id}`);
+                      }}
+                      className="shrink-0 underline underline-offset-2 hover:opacity-80"
+                    >
+                      Receipt
+                    </button>
+                  </div>
                 );
               }
               if (shipped?.status === "received") {
                 return (
-                  <p className="mt-3 flex items-center gap-1.5 rounded-md bg-surface-container-low px-3 py-2 text-xs font-medium text-on-surface-variant">
-                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check_circle</span>
-                    Received at {shipped.destination_store}
-                  </p>
+                  <div className="mt-3 flex items-center justify-between gap-2 rounded-md bg-surface-container-low px-3 py-2 text-xs font-medium text-on-surface-variant">
+                    <span className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check_circle</span>
+                      Received at {shipped.destination_store}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        router.push(`/transfers/${shipped.id}`);
+                      }}
+                      className="shrink-0 underline underline-offset-2 hover:opacity-80"
+                    >
+                      Receipt
+                    </button>
+                  </div>
                 );
               }
               if (!canShip) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { api, ApiError, ItemSummary, ReceiveStockResponse, StockMovement, StockTransfer } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RiskBadge } from "@/components/RiskBadge";
@@ -235,13 +236,18 @@ export default function ReceiveStockPage() {
                   </p>
                   {confirmError[t.id] && <p className="text-xs text-error">{confirmError[t.id]}</p>}
                 </div>
-                <button
-                  onClick={() => handleConfirm(t.id)}
-                  disabled={confirmingId === t.id}
-                  className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
-                >
-                  {confirmingId === t.id ? "Confirming..." : "Confirm receipt"}
-                </button>
+                <div className="flex shrink-0 items-center gap-3">
+                  <Link href={`/transfers/${t.id}`} className="text-xs font-medium text-primary hover:underline">
+                    Receipt
+                  </Link>
+                  <button
+                    onClick={() => handleConfirm(t.id)}
+                    disabled={confirmingId === t.id}
+                    className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {confirmingId === t.id ? "Confirming..." : "Confirm receipt"}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
@@ -292,6 +298,11 @@ export default function ReceiveStockPage() {
                     </span>
                   )}
                   {m.kind === "transfer_in" && <span className="text-secondary">Received from {m.counterparty}</span>}
+                  {m.kind !== "receipt" && (
+                    <Link href={`/transfers/${m.id}`} className="ml-1.5 font-medium text-primary hover:underline">
+                      Receipt
+                    </Link>
+                  )}
                 </td>
                 <td className="px-4 py-2.5 text-right tabular-nums text-on-surface-variant">
                   {m.qty.toLocaleString()}

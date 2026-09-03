@@ -184,6 +184,7 @@ export interface StockTransfer {
   id: number;
   item_id: string;
   product_name: string;
+  barcode?: string | null;
   origin_store: string;
   destination_store: string;
   qty: number;
@@ -192,6 +193,11 @@ export interface StockTransfer {
   shipped_at: string;
   received_by?: string | null;
   received_at?: string | null;
+  // This shipment's real value (qty x the item's full_price) - the $ line
+  // on the receipt view. Computed from the shipped qty itself, so it's
+  // stable even if a later pipeline run retires the exact recommended lane.
+  full_price?: number | null;
+  item_value?: number | null;
   distance_miles?: number | null;
   shipment_cost?: number | null;
 }
@@ -377,6 +383,10 @@ export const api = {
   async listOutgoingTransfers(store: string, status?: TransferStatus) {
     const qs = status ? `&status=${status}` : "";
     return request<StockTransfer[]>(`/transfers/outgoing?store=${store}${qs}`);
+  },
+
+  async getTransfer(transferId: number) {
+    return request<StockTransfer>(`/transfers/${transferId}`);
   },
 };
 
