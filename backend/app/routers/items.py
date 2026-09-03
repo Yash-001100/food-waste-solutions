@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query
 from database import get_connection
 from schemas import ItemSummary, ItemDetail, ScheduleDay
 from optimizer import build_countdown_schedule
-from inventory import get_receipts_by_item, recompute_for_receipt
+from inventory import get_stock_adjustments_by_item, recompute_for_stock_change
 
 router = APIRouter(tags=["items"])
 
@@ -31,10 +31,10 @@ def list_items(store: str, risk: Optional[str] = Query(None, description="Filter
 
     con = get_connection()
     # Always pull every item for the store (not filtered by risk in SQL) and
-    # always join discount_recommendations - a stock receipt can change an
-    # item's risk tier (see inventory.py), so filtering against the STALE
-    # risk_scores.risk_score column would hide/show the wrong rows for any
-    # item that's had a receipt logged. Cheap at this data scale (a few
+    # always join discount_recommendations - a stock receipt or transfer can
+    # change an item's risk tier (see inventory.py), so filtering against
+    # the STALE risk_scores.risk_score column would hide/show the wrong rows
+    # for any item with a logged event. Cheap at this data scale (a few
     # hundred to ~1,500 rows per store) to filter/sort in Python instead.
     cols_sql = ", ".join(ITEM_SUMMARY_COLS_R) + ", c.category, d.baseline_daily_demand, d.elasticity_used"
     rows = con.execute(f"""
@@ -48,22 +48,22 @@ def list_items(store: str, risk: Optional[str] = Query(None, description="Filter
     extra_cols = ITEM_SUMMARY_COLS + ["category", "baseline_daily_demand", "elasticity_used"]
     items = [dict(zip(extra_cols, r)) for r in rows]
 
-    receipts = get_receipts_by_item(con, store)
-    if receipts:
+    adjustments = get_stock_adjustments_by_item(con, store)
+    if adjustments:
         for item in items:
-            received = receipts.get(item["item_id"])
-            if received:
-                item.update(recompute_for_receipt(
+            adjustment = adjustments.get(item["item_id"])
+            if adjustment:
+                item.update(recompute_for_stock_change(
                     item["current_stock"], item["full_price"], item["shelf_life_days"],
-                    item["baseline_daily_demand"], item["elasticity_used"], received,
+                    item["baseline_daily_demand"], item["elasticity_used"], adjustment,
                 ))
-                item["received_since_baseline"] = received
+                item["stock_adjustment"] = adjustment
 
     if risk:
         items = [i for i in items if i["risk_score"] == risk.capitalize()]
     items.sort(key=lambda i: (RISK_ORDER[i["risk_score"]], i["do_nothing_sellthrough_pct"]))
 
-    out_cols = ITEM_SUMMARY_COLS + ["category", "received_since_baseline"]
+    out_cols = ITEM_SUMMARY_COLS + ["category", "stock_adjustment"]
     return [ItemSummary(**{k: i.get(k) for k in out_cols}) for i in items]
 
 
@@ -89,22 +89,22 @@ def get_item(store: str, item_id: str):
         row,
     ))
 
-    # Same live receipts overlay as list_items above - a store's item detail
-    # page and its risk board must always agree on current_stock/risk_score
-    # for the same item.
-    received = get_receipts_by_item(con, store).get(item_id)
-    if received:
-        data.update(recompute_for_receipt(
+    # Same live stock-adjustment overlay as list_items above - a store's
+    # item detail page and its risk board must always agree on
+    # current_stock/risk_score for the same item.
+    adjustment = get_stock_adjustments_by_item(con, store).get(item_id)
+    if adjustment:
+        data.update(recompute_for_stock_change(
             data["current_stock"], data["full_price"], data["shelf_life_days"],
-            data["baseline_daily_demand"], data["elasticity_used"], received,
+            data["baseline_daily_demand"], data["elasticity_used"], adjustment,
         ))
-        data["received_since_baseline"] = received
+        data["stock_adjustment"] = adjustment
 
     # Live countdown schedule, computed fresh from the optimizer rather than
     # only for the two pre-baked examples - cheap enough (a few hundred
     # iterations at most) to run per request. Uses current_stock AFTER the
-    # receipt overlay above, so a freshly-restocked item's schedule reflects
-    # what's actually on the shelf now.
+    # adjustment overlay above, so a freshly-restocked or partly-shipped
+    # item's schedule reflects what's actually on the shelf now.
     schedule = build_countdown_schedule(
         data["baseline_daily_demand"], data["elasticity_used"], data["shelf_life_days"],
         data["current_stock"], data["full_price"],

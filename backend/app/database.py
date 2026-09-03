@@ -139,6 +139,35 @@ def _init_schema(con):
         )
     """)
 
+    # stock_transfers - a store-to-store move of a real, already-recommended
+    # transfer candidate (transfer_allocations), executed in two real steps
+    # rather than one click: the origin "ships" (stock leaves it immediately -
+    # see routers/transfers.py's ship_transfer), and the destination has to
+    # separately "confirm" before ITS stock reflects it (see confirm_transfer).
+    # That gap deliberately mirrors the real ASN + dock-scan pattern discussed
+    # for how a real retailer receives stock - a shipment in transit isn't
+    # inventory yet on either end until someone on the receiving side has
+    # actually checked it in. See inventory.py for how this ledger and
+    # stock_receipts both feed the one live "what is this store-item's real
+    # current stock right now" computation used everywhere in the app.
+    con.execute("""
+        CREATE SEQUENCE IF NOT EXISTS stock_transfers_id_seq START 1
+    """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS stock_transfers (
+            id                 BIGINT PRIMARY KEY DEFAULT nextval('stock_transfers_id_seq'),
+            item_id            VARCHAR NOT NULL,
+            origin_store       VARCHAR NOT NULL,
+            destination_store  VARCHAR NOT NULL,
+            qty                DOUBLE NOT NULL,
+            status             VARCHAR NOT NULL DEFAULT 'in_transit',  -- in_transit | received | cancelled
+            shipped_by         VARCHAR NOT NULL,
+            shipped_at         TIMESTAMP NOT NULL DEFAULT current_timestamp,
+            received_by        VARCHAR,
+            received_at        TIMESTAMP
+        )
+    """)
+
 
 def _register_views(con):
     con.execute(f"""

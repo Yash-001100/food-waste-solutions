@@ -17,9 +17,9 @@ import io
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from database import get_connection
-from inventory import get_receipts_by_item, recompute_for_receipt
+from inventory import get_stock_adjustments_by_item, recompute_for_stock_change
 from routers.auth import get_current_user
-from schemas import CurrentUser, ReceiveStockResponse, RejectedReceiptRow, StockReceipt
+from schemas import CurrentUser, ReceiveStockResponse, RejectedReceiptRow, StockReceipt, StockMovement
 
 router = APIRouter(tags=["inventory"])
 
@@ -110,6 +110,34 @@ async def receive_stock(
     )
 
 
+def _risk_now_for_items(con, store: str, item_ids: set[str]) -> dict[str, str]:
+    """
+    Live risk_score for a set of item_ids at this store, using the combined
+    receipts+transfers overlay (see inventory.py) - not receipts alone, since
+    an item shown in a receipts/movements history table may ALSO have been
+    touched by a transfer since, and "risk now" has to mean the real current
+    risk, not "risk if you only count this history table's own rows."
+    """
+    risk_now: dict[str, str] = {}
+    if not item_ids:
+        return risk_now
+    placeholders = ", ".join("?" for _ in item_ids)
+    base_rows = con.execute(f"""
+        SELECT r.item_id, r.current_stock, r.full_price, r.shelf_life_days,
+               d.baseline_daily_demand, d.elasticity_used
+        FROM risk_scores r
+        JOIN discount_recommendations d USING (store, item_id)
+        WHERE r.store = ? AND r.item_id IN ({placeholders})
+    """, [store, *item_ids]).fetchall()
+    adjustments = get_stock_adjustments_by_item(con, store)
+    for item_id, current_stock, full_price, shelf_life_days, baseline_daily_demand, elasticity_used in base_rows:
+        adjustment = adjustments.get(item_id, 0.0)
+        risk_now[item_id] = recompute_for_stock_change(
+            current_stock, full_price, shelf_life_days, baseline_daily_demand, elasticity_used, adjustment,
+        )["risk_score"]
+    return risk_now
+
+
 @router.get("/stores/{store}/receipts", response_model=list[StockReceipt])
 def list_receipts(store: str, limit: int = 50):
     """
@@ -129,26 +157,7 @@ def list_receipts(store: str, limit: int = 50):
         LIMIT ?
     """, [store, limit]).fetchall()
 
-    # risk_score_now needs the same live recompute as everywhere else - one
-    # small query per distinct item on this page, not per row (an item can
-    # have several receipts logged over time).
-    item_ids = {r[2] for r in rows}
-    risk_now: dict[str, str] = {}
-    if item_ids:
-        placeholders = ", ".join("?" for _ in item_ids)
-        base_rows = con.execute(f"""
-            SELECT r.item_id, r.current_stock, r.full_price, r.shelf_life_days,
-                   d.baseline_daily_demand, d.elasticity_used
-            FROM risk_scores r
-            JOIN discount_recommendations d USING (store, item_id)
-            WHERE r.store = ? AND r.item_id IN ({placeholders})
-        """, [store, *item_ids]).fetchall()
-        receipts_by_item = get_receipts_by_item(con, store)  # every item_id here has >0 by construction
-        for item_id, current_stock, full_price, shelf_life_days, baseline_daily_demand, elasticity_used in base_rows:
-            risk_now[item_id] = recompute_for_receipt(
-                current_stock, full_price, shelf_life_days, baseline_daily_demand, elasticity_used,
-                receipts_by_item[item_id],
-            )["risk_score"]
+    risk_now = _risk_now_for_items(con, store, {r[2] for r in rows})
 
     out = []
     for id_, store_, item_id, product_name, qty_received, received_by, received_at, source_filename in rows:
@@ -160,3 +169,73 @@ def list_receipts(store: str, limit: int = 50):
             risk_score_now=risk_now.get(item_id, "Low"),
         ))
     return out
+
+
+@router.get("/stores/{store}/stock-movements", response_model=list[StockMovement])
+def stock_movements(store: str, limit: int = 50):
+    """
+    A store's unified stock-movement history: every supplier receipt it has
+    logged, every transfer it has shipped OUT (any status - a still-in-transit
+    or even a cancelled shipment is still something that happened here), and
+    every transfer it has confirmed received IN (status='received' only - a
+    transfer still in transit toward this store belongs on the "incoming to
+    confirm" list in routers/transfers.py, not in history yet, same as a real
+    ASN isn't a receiving event until someone scans it in). Sorted newest
+    first across all three sources combined, since to an associate this is
+    one story of "what's moved through this store," not three separate lists.
+    """
+    store = store.upper()
+    con = get_connection()
+
+    receipt_rows = con.execute("""
+        SELECT sr.id, sr.item_id, r.product_name, sr.qty_received, sr.source_filename,
+               sr.received_by, sr.received_at
+        FROM stock_receipts sr
+        LEFT JOIN risk_scores r ON r.store = sr.store AND r.item_id = sr.item_id
+        WHERE sr.store = ?
+    """, [store]).fetchall()
+
+    out_rows = con.execute("""
+        SELECT st.id, st.item_id, r.product_name, st.qty, st.destination_store, st.status,
+               st.shipped_by, st.shipped_at
+        FROM stock_transfers st
+        LEFT JOIN risk_scores r ON r.store = st.origin_store AND r.item_id = st.item_id
+        WHERE st.origin_store = ?
+    """, [store]).fetchall()
+
+    in_rows = con.execute("""
+        SELECT st.id, st.item_id, r.product_name, st.qty, st.origin_store, st.status,
+               st.received_by, st.received_at
+        FROM stock_transfers st
+        LEFT JOIN risk_scores r ON r.store = st.destination_store AND r.item_id = st.item_id
+        WHERE st.destination_store = ? AND st.status = 'received'
+    """, [store]).fetchall()
+
+    item_ids = {r[1] for r in receipt_rows} | {r[1] for r in out_rows} | {r[1] for r in in_rows}
+    risk_now = _risk_now_for_items(con, store, item_ids)
+
+    movements = []
+    for id_, item_id, product_name, qty, source_filename, performed_by, performed_at in receipt_rows:
+        movements.append(StockMovement(
+            id=id_, kind="receipt", item_id=item_id, product_name=product_name or item_id,
+            qty=qty, counterparty=source_filename, status="received",
+            performed_by=performed_by, performed_at=str(performed_at),
+            risk_score_now=risk_now.get(item_id, "Low"),
+        ))
+    for id_, item_id, product_name, qty, destination_store, status, shipped_by, shipped_at in out_rows:
+        movements.append(StockMovement(
+            id=id_, kind="transfer_out", item_id=item_id, product_name=product_name or item_id,
+            qty=qty, counterparty=destination_store, status=status,
+            performed_by=shipped_by, performed_at=str(shipped_at),
+            risk_score_now=risk_now.get(item_id, "Low"),
+        ))
+    for id_, item_id, product_name, qty, origin_store, status, received_by, received_at in in_rows:
+        movements.append(StockMovement(
+            id=id_, kind="transfer_in", item_id=item_id, product_name=product_name or item_id,
+            qty=qty, counterparty=origin_store, status=status,
+            performed_by=received_by or "", performed_at=str(received_at),
+            risk_score_now=risk_now.get(item_id, "Low"),
+        ))
+
+    movements.sort(key=lambda m: m.performed_at, reverse=True)
+    return movements[:limit]

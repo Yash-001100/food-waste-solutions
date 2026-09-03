@@ -45,13 +45,14 @@ class ItemSummary(BaseModel):
     # just item detail) so a store-wide view like the risk treemap can label
     # tiles by department without a second round trip per item.
     category: Optional[str] = None
-    # Set only when a real stock receipt has been logged for this item (see
-    # inventory.py/routers/inventory.py) - current_stock and every
-    # stock-dependent field above already reflect it; this is surfaced
-    # separately so the UI can flag "this number includes a real shipment,
-    # not just the pipeline's original baseline" instead of the change
-    # looking like a silent number bump.
-    received_since_baseline: Optional[float] = None
+    # Set only when this item has a real logged supplier receipt and/or
+    # store-to-store transfer (see inventory.py) - current_stock and every
+    # stock-dependent field above already reflect it. Positive: net stock
+    # added (received more than shipped out); negative: net stock shipped
+    # away pending or after a transfer. Surfaced separately so the UI can
+    # flag "this number includes a real event, not just the pipeline's
+    # original baseline" instead of the change looking like a silent bump.
+    stock_adjustment: Optional[float] = None
 
 
 class ScheduleDay(BaseModel):
@@ -146,6 +147,52 @@ class StockReceipt(BaseModel):
     # What this receipt did to the item's risk tier, for a quick "so what
     # happened" read in the receipts history table - recomputed the same
     # way as everywhere else (inventory.py), not stored redundantly.
+    risk_score_now: str
+
+
+# --- Stock transfers: a real, store-initiated "EDI-style" move of an
+# already-recommended transfer_allocations candidate between two stores,
+# executed as two real steps (ship, then confirm) rather than one click -
+# see routers/transfers.py.
+
+
+class ShipTransferRequest(BaseModel):
+    item_id: str
+    destination_store: str
+
+
+class StockTransfer(BaseModel):
+    id: int
+    item_id: str
+    product_name: str
+    origin_store: str
+    destination_store: str
+    qty: float
+    status: str  # in_transit | received | cancelled
+    shipped_by: str
+    shipped_at: str
+    received_by: Optional[str] = None
+    received_at: Optional[str] = None
+    # Real economics from transfer_allocations, carried along for display -
+    # not recomputed here, just the same numbers the Transfers page already
+    # showed before this was ever shipped.
+    distance_miles: Optional[float] = None
+    shipment_cost: Optional[float] = None
+
+
+class StockMovement(BaseModel):
+    """One row in a store's unified stock-movement history: a supplier
+    receipt, a transfer this store sent out, or a transfer this store
+    received - see routers/inventory.py's stock_movements endpoint."""
+    id: int
+    kind: str  # receipt | transfer_out | transfer_in
+    item_id: str
+    product_name: str
+    qty: float
+    counterparty: Optional[str] = None  # source filename (receipt) or the other store (transfer)
+    status: str
+    performed_by: str
+    performed_at: str
     risk_score_now: str
 
 

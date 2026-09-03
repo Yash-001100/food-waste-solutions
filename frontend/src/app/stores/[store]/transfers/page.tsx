@@ -3,25 +3,78 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { api, TransferCandidate, StoreDistancesResponse } from "@/lib/api";
+import { api, ApiError, TransferCandidate, StoreDistancesResponse, StockTransfer } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { formatUSD } from "@/lib/format";
 import { Pagination } from "@/components/Pagination";
 
 const PAGE_SIZE = 20;
 
+function laneKey(itemId: string, destinationStore: string) {
+  return `${itemId}::${destinationStore}`;
+}
+
 export default function TransfersPage() {
   const params = useParams<{ store: string }>();
   const store = params.store.toUpperCase();
+  const { user, token } = useAuth();
   const [transfers, setTransfers] = useState<TransferCandidate[] | null>(null);
   const [distances, setDistances] = useState<StoreDistancesResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [showDistances, setShowDistances] = useState(false);
 
+  // Most recent non-cancelled shipment already logged for a given
+  // (item, destination) lane - transfer_allocations itself doesn't get
+  // removed once shipped (see inventory.py: it's a batch/pipeline concept,
+  // not re-solved live), so without this a lane the model still recommends
+  // could otherwise look shippable again after it's already gone out.
+  const [outgoing, setOutgoing] = useState<Record<string, StockTransfer>>({});
+  const [shippingKey, setShippingKey] = useState<string | null>(null);
+  const [shipError, setShipError] = useState<Record<string, string>>({});
+
+  const canShip = user?.store === store;
+
+  function refreshOutgoing() {
+    api
+      .listOutgoingTransfers(store)
+      .then((rows) => {
+        const byLane: Record<string, StockTransfer> = {};
+        for (const t of rows) {
+          // Non-cancelled wins if both exist for the same lane (a re-shipped
+          // lane after a cancel should show its live status, not the dead one).
+          const key = laneKey(t.item_id, t.destination_store);
+          if (!byLane[key] || byLane[key].status === "cancelled") byLane[key] = t;
+        }
+        setOutgoing(byLane);
+      })
+      .catch(() => {});
+  }
+
   useEffect(() => {
     api.listTransfers(store).then(setTransfers).catch(() => setError("Couldn't load transfers."));
     api.storeDistances(store).then(setDistances).catch(() => {});
+    refreshOutgoing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store]);
+
+  async function handleShip(itemId: string, destinationStore: string) {
+    if (!token) return;
+    const key = laneKey(itemId, destinationStore);
+    setShippingKey(key);
+    setShipError((prev) => ({ ...prev, [key]: "" }));
+    try {
+      await api.shipTransfer(token, { item_id: itemId, destination_store: destinationStore });
+      refreshOutgoing();
+    } catch (err) {
+      setShipError((prev) => ({
+        ...prev,
+        [key]: err instanceof ApiError ? err.message : "Couldn't reach the API.",
+      }));
+    } finally {
+      setShippingKey(null);
+    }
+  }
 
   const totalPages = transfers ? Math.max(1, Math.ceil(transfers.length / PAGE_SIZE)) : 1;
   const pageTransfers = transfers ? transfers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : null;
@@ -150,6 +203,53 @@ export default function TransfersPage() {
                 )}
               </div>
             )}
+
+            {t.transfer_to_store && (() => {
+              const key = laneKey(t.item_id, t.transfer_to_store);
+              const shipped = outgoing[key];
+              const err = shipError[key];
+
+              if (shipped?.status === "in_transit") {
+                return (
+                  <p className="mt-3 flex items-center gap-1.5 rounded-md bg-secondary-container px-3 py-2 text-xs font-medium text-on-secondary-container">
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>local_shipping</span>
+                    Shipped — awaiting confirmation at {shipped.destination_store}
+                  </p>
+                );
+              }
+              if (shipped?.status === "received") {
+                return (
+                  <p className="mt-3 flex items-center gap-1.5 rounded-md bg-surface-container-low px-3 py-2 text-xs font-medium text-on-surface-variant">
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>check_circle</span>
+                    Received at {shipped.destination_store}
+                  </p>
+                );
+              }
+              if (!canShip) {
+                return (
+                  <p className="mt-3 text-xs text-on-surface-variant">
+                    Sign in as a {store} associate to ship this lane.
+                  </p>
+                );
+              }
+              return (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleShip(t.item_id, t.transfer_to_store!);
+                    }}
+                    disabled={shippingKey === key}
+                    className="w-full rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {shippingKey === key ? "Shipping..." : `Ship to ${t.transfer_to_store}`}
+                  </button>
+                  {err && <p className="mt-1 text-xs text-error">{err}</p>}
+                </div>
+              );
+            })()}
           </Link>
         ))}
       </div>

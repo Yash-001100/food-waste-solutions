@@ -1,30 +1,58 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, ApiError, ItemSummary, ReceiveStockResponse, StockReceipt } from "@/lib/api";
+import { api, ApiError, ItemSummary, ReceiveStockResponse, StockMovement, StockTransfer } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { RiskBadge } from "@/components/RiskBadge";
 
 export default function ReceiveStockPage() {
   const { user, token } = useAuth();
   const [items, setItems] = useState<ItemSummary[] | null>(null);
-  const [receipts, setReceipts] = useState<StockReceipt[] | null>(null);
+  const [movements, setMovements] = useState<StockMovement[] | null>(null);
+  const [incoming, setIncoming] = useState<StockTransfer[] | null>(null);
+  const [confirmingId, setConfirmingId] = useState<number | null>(null);
+  const [confirmError, setConfirmError] = useState<Record<number, string>>({});
   const [result, setResult] = useState<ReceiveStockResponse | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const refreshReceipts = useCallback(() => {
+  const refreshHistory = useCallback(() => {
     if (!user) return;
-    api.listReceipts(user.store).then(setReceipts).catch(() => {});
+    api.listStockMovements(user.store).then(setMovements).catch(() => {});
+  }, [user]);
+
+  const refreshIncoming = useCallback(() => {
+    if (!user) return;
+    api.listIncomingTransfers(user.store, "in_transit").then(setIncoming).catch(() => {});
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
     api.listItems(user.store).then(setItems).catch(() => {});
-    refreshReceipts();
-  }, [user, refreshReceipts]);
+    refreshHistory();
+    refreshIncoming();
+  }, [user, refreshHistory, refreshIncoming]);
+
+  async function handleConfirm(transferId: number) {
+    if (!token) return;
+    setConfirmingId(transferId);
+    setConfirmError((prev) => ({ ...prev, [transferId]: "" }));
+    try {
+      await api.confirmTransfer(token, transferId);
+      refreshIncoming();
+      refreshHistory();
+      if (user) api.listItems(user.store).then(setItems).catch(() => {});
+    } catch (err) {
+      setConfirmError((prev) => ({
+        ...prev,
+        [transferId]: err instanceof ApiError ? err.message : "Couldn't reach the API.",
+      }));
+    } finally {
+      setConfirmingId(null);
+    }
+  }
 
   async function handleFile(file: File) {
     if (!user || !token) return;
@@ -42,7 +70,7 @@ export default function ReceiveStockPage() {
       // (used for the starter-CSV download and the "at a glance" numbers
       // below) needs a refresh too, not just the receipts history.
       api.listItems(user.store).then(setItems).catch(() => {});
-      refreshReceipts();
+      refreshHistory();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Couldn't process this file.");
     } finally {
@@ -186,57 +214,116 @@ export default function ReceiveStockPage() {
         </div>
       )}
 
+      <div className="rounded-lg border border-outline-variant bg-surface p-5">
+        <h2 className="text-lg font-bold text-on-surface">Incoming from other stores</h2>
+        <p className="mb-3 text-xs text-on-surface-variant">
+          Transfers a sister store has shipped to {user.store} that haven&apos;t been confirmed yet - {user.store}
+          &apos;s own stock won&apos;t reflect them until someone here checks them in, the same way a real shipment
+          isn&apos;t inventory until it&apos;s scanned at the dock.
+        </p>
+        {incoming && incoming.length > 0 && (
+          <ul className="space-y-2">
+            {incoming.map((t) => (
+              <li
+                key={t.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-outline-variant bg-surface-container-low p-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-on-surface">{t.product_name}</p>
+                  <p className="text-xs text-on-surface-variant">
+                    {t.qty.toLocaleString()} units from {t.origin_store} · shipped {t.shipped_at.split(".")[0]}
+                  </p>
+                  {confirmError[t.id] && <p className="text-xs text-error">{confirmError[t.id]}</p>}
+                </div>
+                <button
+                  onClick={() => handleConfirm(t.id)}
+                  disabled={confirmingId === t.id}
+                  className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {confirmingId === t.id ? "Confirming..." : "Confirm receipt"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {incoming && incoming.length === 0 && (
+          <p className="text-sm text-on-surface-variant">Nothing in transit to {user.store} right now.</p>
+        )}
+        {!incoming && <p className="text-sm text-on-surface-variant">Loading...</p>}
+      </div>
+
       <div className="overflow-x-auto rounded-lg border border-outline-variant bg-surface">
         <div className="p-5 pb-0">
-          <h2 className="text-lg font-bold text-on-surface">Recent shipments</h2>
-          <p className="mb-3 text-xs text-on-surface-variant">Every receipt logged at {user.store}, most recent first.</p>
+          <h2 className="text-lg font-bold text-on-surface">Stock movement history</h2>
+          <p className="mb-3 text-xs text-on-surface-variant">
+            Every supplier receipt, outgoing transfer, and confirmed incoming transfer at {user.store}, most recent
+            first.
+          </p>
         </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-outline-variant text-left text-xs uppercase tracking-wide text-on-surface-variant">
               <th className="px-4 py-2.5 font-semibold">Item</th>
-              <th className="px-4 py-2.5 font-semibold text-right">Qty received</th>
+              <th className="px-4 py-2.5 font-semibold">Movement</th>
+              <th className="px-4 py-2.5 font-semibold text-right">Qty</th>
               <th className="px-4 py-2.5 font-semibold">Risk now</th>
-              <th className="px-4 py-2.5 font-semibold">Received by</th>
+              <th className="px-4 py-2.5 font-semibold">By</th>
               <th className="px-4 py-2.5 font-semibold">When</th>
-              <th className="px-4 py-2.5 font-semibold">Source file</th>
             </tr>
           </thead>
           <tbody>
-            {receipts?.map((r) => (
-              <tr key={r.id} className="border-b border-outline-variant last:border-0">
+            {movements?.map((m) => (
+              <tr key={`${m.kind}-${m.id}`} className="border-b border-outline-variant last:border-0">
                 <td className="px-4 py-2.5 text-on-surface">
-                  {r.product_name}
-                  <p className="text-xs text-on-surface-variant">{r.item_id}</p>
+                  {m.product_name}
+                  <p className="text-xs text-on-surface-variant">{m.item_id}</p>
+                </td>
+                <td className="px-4 py-2.5 text-xs text-on-surface-variant">
+                  {m.kind === "receipt" && (
+                    <>
+                      Supplier receipt
+                      {m.counterparty && <span className="block text-on-surface-variant">{m.counterparty}</span>}
+                    </>
+                  )}
+                  {m.kind === "transfer_out" && (
+                    <span className="text-tertiary">
+                      Shipped to {m.counterparty}
+                      {m.status !== "received" && <span className="block capitalize">{m.status.replace("_", " ")}</span>}
+                    </span>
+                  )}
+                  {m.kind === "transfer_in" && <span className="text-secondary">Received from {m.counterparty}</span>}
                 </td>
                 <td className="px-4 py-2.5 text-right tabular-nums text-on-surface-variant">
-                  {r.qty_received.toLocaleString()}
+                  {m.qty.toLocaleString()}
                 </td>
                 <td className="px-4 py-2.5">
-                  <RiskBadge tier={r.risk_score_now} />
+                  <RiskBadge tier={m.risk_score_now} />
                 </td>
-                <td className="px-4 py-2.5 text-xs text-on-surface-variant">{r.received_by}</td>
-                <td className="px-4 py-2.5 text-xs text-on-surface-variant">{r.received_at.split(".")[0]}</td>
-                <td className="px-4 py-2.5 text-xs text-on-surface-variant">{r.source_filename ?? "—"}</td>
+                <td className="px-4 py-2.5 text-xs text-on-surface-variant">{m.performed_by || "—"}</td>
+                <td className="px-4 py-2.5 text-xs text-on-surface-variant">{m.performed_at.split(".")[0]}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        {receipts && receipts.length === 0 && (
-          <p className="p-6 text-center text-sm text-on-surface-variant">No shipments logged yet.</p>
+        {movements && movements.length === 0 && (
+          <p className="p-6 text-center text-sm text-on-surface-variant">No stock movements logged yet.</p>
         )}
-        {!receipts && <p className="p-6 text-center text-sm text-on-surface-variant">Loading...</p>}
+        {!movements && <p className="p-6 text-center text-sm text-on-surface-variant">Loading...</p>}
       </div>
 
       <p className="text-xs text-on-surface-variant">
-        This only restocks items {user.store} already carries - a brand-new item this store has never sold has no
-        real sales history to base a demand or discount recommendation on, so rather than invent those numbers,
-        unrecognized item IDs are rejected instead of silently accepted. Risk score, recommended action, and every
-        stock-dependent number recompute immediately from the real model used everywhere else in this app - a
-        receipt often pushes an item&apos;s risk UP, not down, since ordering more of something already slow-moving
-        is exactly the situation this project exists to catch. Same-state transfer matches are a separate, batched
-        calculation and don&apos;t re-run live against a fresh receipt; a newly-Critical item shows up correctly on
-        the risk board right away; it gets a real transfer candidate on the next model run.
+        CSV upload only restocks items {user.store} already carries - a brand-new item this store has never sold has
+        no real sales history to base a demand or discount recommendation on, so rather than invent those numbers,
+        unrecognized item IDs are rejected instead of silently accepted. An incoming transfer works the same way but
+        is stricter still: it can only ever be one of the model&apos;s own <a className="font-medium text-primary hover:underline" href={`/stores/${user.store}/transfers`}>recommended transfer lanes</a> to
+        {" "}{user.store}, shipped by that origin store - there&apos;s no way to receive an arbitrary item or quantity
+        through this page. Either way, risk score, recommended action, and every stock-dependent number recompute
+        immediately from the real model used everywhere else in this app - a receipt or an inbound transfer often
+        pushes an item&apos;s risk UP, not down, since ordering or receiving more of something already slow-moving is
+        exactly the situation this project exists to catch. Same-state transfer matching itself is a separate,
+        batched calculation and doesn&apos;t re-run live against a fresh receipt or transfer; a newly-Critical item
+        shows up correctly on the risk board right away, but it only gets a real new transfer candidate on the next
+        model run.
       </p>
     </div>
   );

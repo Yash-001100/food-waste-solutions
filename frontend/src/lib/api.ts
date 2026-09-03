@@ -32,11 +32,13 @@ export interface ItemSummary {
   revenue_max_discount_pct: number;
   reachable_target: boolean;
   category?: string | null;
-  // Set only when a real stock receipt has been logged for this item (see
-  // /receive-stock) - current_stock and every field above already reflect
-  // it; this flags "this includes a real shipment," not a silent number
-  // bump, on the risk board and item detail.
-  received_since_baseline?: number | null;
+  // Set only when this item has a real logged supplier receipt and/or
+  // store-to-store transfer (see /receive-stock and /stores/[store]/transfers)
+  // - current_stock and every field above already reflect it. Positive: net
+  // stock added (received more than shipped out); negative: net stock
+  // shipped away (pending or after a transfer). Flags "this includes a real
+  // event," not a silent number bump, on the risk board and item detail.
+  stock_adjustment?: number | null;
 }
 
 export interface ScheduleDay {
@@ -161,6 +163,52 @@ export interface StockReceipt {
   received_by: string;
   received_at: string;
   source_filename?: string | null;
+  risk_score_now: RiskTier;
+}
+
+// --- Stock transfers: a real, store-initiated "internal EDI" move of an
+// already-recommended transfer_allocations candidate between two stores,
+// executed as two real steps (ship, then confirm) - see
+// backend/app/routers/transfers.py. Deliberately NOT a free-form "move any
+// item, any quantity, anywhere" feature: only a lane the model itself
+// already recommended (see TransferCandidate above) can be shipped.
+
+export interface ShipTransferRequest {
+  item_id: string;
+  destination_store: string;
+}
+
+export type TransferStatus = "in_transit" | "received" | "cancelled";
+
+export interface StockTransfer {
+  id: number;
+  item_id: string;
+  product_name: string;
+  origin_store: string;
+  destination_store: string;
+  qty: number;
+  status: TransferStatus;
+  shipped_by: string;
+  shipped_at: string;
+  received_by?: string | null;
+  received_at?: string | null;
+  distance_miles?: number | null;
+  shipment_cost?: number | null;
+}
+
+export type StockMovementKind = "receipt" | "transfer_out" | "transfer_in";
+
+export interface StockMovement {
+  id: number;
+  kind: StockMovementKind;
+  item_id: string;
+  product_name: string;
+  qty: number;
+  // Source filename (receipt) or the other store (transfer in/out).
+  counterparty?: string | null;
+  status: string;
+  performed_by: string;
+  performed_at: string;
   risk_score_now: RiskTier;
 }
 
@@ -299,6 +347,36 @@ export const api = {
 
   async listReceipts(store: string, limit = 25) {
     return request<StockReceipt[]>(`/stores/${store}/receipts?limit=${limit}`);
+  },
+
+  async listStockMovements(store: string, limit = 25) {
+    return request<StockMovement[]>(`/stores/${store}/stock-movements?limit=${limit}`);
+  },
+
+  async shipTransfer(token: string, body: ShipTransferRequest) {
+    return request<StockTransfer>(
+      "/transfers/ship",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+      token
+    );
+  },
+
+  async confirmTransfer(token: string, transferId: number) {
+    return request<StockTransfer>(`/transfers/${transferId}/confirm`, { method: "POST" }, token);
+  },
+
+  async cancelTransfer(token: string, transferId: number) {
+    return request<StockTransfer>(`/transfers/${transferId}/cancel`, { method: "POST" }, token);
+  },
+
+  async listIncomingTransfers(store: string, status?: TransferStatus) {
+    const qs = status ? `&status=${status}` : "";
+    return request<StockTransfer[]>(`/transfers/incoming?store=${store}${qs}`);
+  },
+
+  async listOutgoingTransfers(store: string, status?: TransferStatus) {
+    const qs = status ? `&status=${status}` : "";
+    return request<StockTransfer[]>(`/transfers/outgoing?store=${store}${qs}`);
   },
 };
 

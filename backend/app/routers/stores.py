@@ -5,7 +5,7 @@ from typing import List
 
 from database import get_connection, PROC
 from schemas import StoreSummary
-from inventory import compute_receipt_overrides
+from inventory import compute_stock_overrides
 
 router = APIRouter(tags=["stores"])
 
@@ -13,11 +13,12 @@ router = APIRouter(tags=["stores"])
 def _patch_store_counts(counts: dict, overrides_for_store: list) -> dict:
     """
     Adjusts a store's low/medium/high/critical counts and
-    potential_revenue_at_risk for every item that's had a real stock
-    receipt logged (see inventory.py) - the base SQL aggregate below still
-    reflects the pipeline's original risk tiers, so each override moves one
-    item from its old tier/revenue contribution to its recomputed one,
-    rather than re-scanning every item at the store.
+    potential_revenue_at_risk for every item with a real logged stock event
+    - a supplier receipt or a store-to-store transfer (see inventory.py) -
+    the base SQL aggregate below still reflects the pipeline's original
+    risk tiers, so each override moves one item from its old tier/revenue
+    contribution to its recomputed one, rather than re-scanning every item
+    at the store.
     """
     counts = dict(counts)
     for ov in overrides_for_store:
@@ -83,7 +84,7 @@ def list_stores():
     by_store = {r[0]: dict(zip(cols, r)) for r in rows}
 
     overrides_by_store: dict[str, list] = {}
-    for (store_, _item_id), ov in compute_receipt_overrides(con).items():
+    for (store_, _item_id), ov in compute_stock_overrides(con).items():
         overrides_by_store.setdefault(store_, []).append(ov)
     for store_, overrides in overrides_by_store.items():
         if store_ in by_store:
@@ -112,10 +113,11 @@ def store_map():
     critical_counts = dict(con.execute(
         "SELECT store, count(*) FROM risk_scores WHERE risk_score = 'Critical' GROUP BY store"
     ).fetchall())
-    # A real stock receipt (see inventory.py) can push an item into or out of
-    # Critical - patch the base counts the same way the store summary does,
-    # so a store's marker size on the map agrees with its own overview page.
-    for (store_, _item_id), ov in compute_receipt_overrides(con).items():
+    # A real stock receipt or transfer (see inventory.py) can push an item
+    # into or out of Critical - patch the base counts the same way the store
+    # summary does, so a store's marker size on the map agrees with its own
+    # overview page.
+    for (store_, _item_id), ov in compute_stock_overrides(con).items():
         if ov["old_risk_score"] == ov["risk_score"]:
             continue
         if ov["old_risk_score"] == "Critical":
@@ -184,7 +186,7 @@ def get_store(store: str):
     """, [store]).fetchone()
     cols = ["store", "total_items", "low", "medium", "high", "critical", "potential_revenue_at_risk"]
     counts = dict(zip(cols, row))
-    counts = _patch_store_counts(counts, list(compute_receipt_overrides(con, store=store).values()))
+    counts = _patch_store_counts(counts, list(compute_stock_overrides(con, store=store).values()))
     return StoreSummary(**counts)
 
 
