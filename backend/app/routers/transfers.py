@@ -30,7 +30,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from database import get_connection
 from routers.auth import get_current_user
-from schemas import CurrentUser, ShipTransferRequest, StockTransfer
+from schemas import ConfirmTransferRequest, CurrentUser, ShipTransferRequest, StockTransfer
 
 router = APIRouter(prefix="/transfers", tags=["transfers"])
 
@@ -38,7 +38,7 @@ _TRANSFER_ROW_SQL = """
     SELECT st.id, st.item_id, r.product_name, r.barcode, r.full_price,
            st.origin_store, st.destination_store, st.qty, st.status,
            st.shipped_by, st.shipped_at, st.received_by, st.received_at,
-           a.distance_miles, a.shipment_cost
+           st.qty_confirmed, a.distance_miles, a.shipment_cost
     FROM stock_transfers st
     LEFT JOIN risk_scores r ON r.store = st.origin_store AND r.item_id = st.item_id
     LEFT JOIN transfer_allocations a
@@ -49,7 +49,7 @@ _TRANSFER_ROW_SQL = """
 
 def _to_stock_transfer(row) -> StockTransfer:
     (id_, item_id, product_name, barcode, full_price, origin_store, destination_store, qty, status,
-     shipped_by, shipped_at, received_by, received_at, distance_miles, shipment_cost) = row
+     shipped_by, shipped_at, received_by, received_at, qty_confirmed, distance_miles, shipment_cost) = row
     # item_value is recomputed from this transfer's own shipped qty x the
     # item's real full_price, rather than trusted from transfer_allocations
     # directly - that keeps it correct even once a later pipeline run
@@ -61,6 +61,7 @@ def _to_stock_transfer(row) -> StockTransfer:
         origin_store=origin_store, destination_store=destination_store, qty=qty,
         status=status, shipped_by=shipped_by, shipped_at=str(shipped_at),
         received_by=received_by, received_at=str(received_at) if received_at else None,
+        qty_confirmed=qty_confirmed,
         full_price=full_price, item_value=item_value,
         distance_miles=round(distance_miles, 1) if distance_miles is not None else None,
         shipment_cost=shipment_cost,
@@ -112,7 +113,19 @@ def ship_transfer(body: ShipTransferRequest, current_user: CurrentUser = Depends
 
 
 @router.post("/{transfer_id}/confirm", response_model=StockTransfer)
-def confirm_transfer(transfer_id: int, current_user: CurrentUser = Depends(get_current_user)):
+def confirm_transfer(
+    transfer_id: int,
+    body: ConfirmTransferRequest | None = None,
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    """
+    The RECADV step: the destination reports what it actually checked in,
+    which real EDI expects can come in short of what the DESADV (our ship)
+    said was coming - damage or loss in transit is a real, disclosed
+    possibility here, not swept under the rug. Omitting qty_confirmed (or
+    posting no body at all) confirms the full shipped qty, so a normal,
+    no-discrepancy receipt needs nothing extra from the caller.
+    """
     con = get_connection()
     transfer = _get_transfer(con, transfer_id)
     if current_user.store != transfer.destination_store:
@@ -121,11 +134,18 @@ def confirm_transfer(transfer_id: int, current_user: CurrentUser = Depends(get_c
     if transfer.status != "in_transit":
         raise HTTPException(status_code=409, detail=f"This transfer is already '{transfer.status}', not in transit")
 
+    qty_confirmed = body.qty_confirmed if body and body.qty_confirmed is not None else transfer.qty
+    if qty_confirmed < 0 or qty_confirmed > transfer.qty:
+        raise HTTPException(
+            status_code=400,
+            detail=f"qty_confirmed must be between 0 and the shipped quantity ({transfer.qty})",
+        )
+
     con.execute("""
         UPDATE stock_transfers
-        SET status = 'received', received_by = ?, received_at = current_timestamp
+        SET status = 'received', received_by = ?, received_at = current_timestamp, qty_confirmed = ?
         WHERE id = ?
-    """, [current_user.username, transfer_id])
+    """, [current_user.username, qty_confirmed, transfer_id])
     return _get_transfer(con, transfer_id)
 
 

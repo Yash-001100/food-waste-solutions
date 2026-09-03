@@ -30,6 +30,10 @@ export default function TransferReceiptPage() {
   const [error, setError] = useState<string | null>(null);
   const [acting, setActing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  // What the destination is about to confirm actually arrived - a string so
+  // the field can be blanked while typing. Set from transfer.qty once it
+  // loads (see the effect below), so it starts as "everything shipped".
+  const [confirmQty, setConfirmQty] = useState<string>("");
 
   function load() {
     api
@@ -47,12 +51,21 @@ export default function TransferReceiptPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transferId]);
 
+  useEffect(() => {
+    if (transfer && transfer.status === "in_transit") setConfirmQty(String(transfer.qty));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transfer?.id]);
+
   async function handleConfirm() {
     if (!token || !transfer) return;
     setActing(true);
     setActionError(null);
     try {
-      setTransfer(await api.confirmTransfer(token, transfer.id));
+      // Untouched/blank/equal-to-shipped -> confirm the full qty (no
+      // override sent); otherwise report the real, lower count that arrived.
+      const override =
+        confirmQty === "" || Number(confirmQty) === transfer.qty ? undefined : Number(confirmQty);
+      setTransfer(await api.confirmTransfer(token, transfer.id, override));
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : "Couldn't reach the API.");
     } finally {
@@ -131,10 +144,16 @@ export default function TransferReceiptPage() {
 
           <div>
             <p className="text-xs uppercase tracking-wide text-on-surface-variant">Quantity &amp; value</p>
-            <p className="mt-0.5 font-semibold tabular-nums text-on-surface">{transfer.qty.toLocaleString()} units</p>
+            <p className="mt-0.5 font-semibold tabular-nums text-on-surface">{transfer.qty.toLocaleString()} units shipped</p>
             {transfer.item_value != null && (
               <p className="text-xs tabular-nums text-on-surface-variant">
                 {formatUSD(transfer.item_value)} at {formatUSD(transfer.full_price ?? 0)} each
+              </p>
+            )}
+            {transfer.qty_confirmed != null && transfer.qty_confirmed < transfer.qty && (
+              <p className="mt-1 text-xs font-medium text-error">
+                Only {transfer.qty_confirmed.toLocaleString()} confirmed received -{" "}
+                {(transfer.qty - transfer.qty_confirmed).toLocaleString()} lost in transit
               </p>
             )}
           </div>
@@ -167,6 +186,10 @@ export default function TransferReceiptPage() {
               {transfer.status === "received" ? (
                 <>
                   Received by <span className="font-semibold text-on-surface">{transfer.received_by}</span>
+                  {" "}
+                  {transfer.qty_confirmed != null && (
+                    <span className="tabular-nums">({transfer.qty_confirmed.toLocaleString()} confirmed)</span>
+                  )}
                   <br />
                   <span className="text-xs text-on-surface-variant">{transfer.received_at?.split(".")[0]}</span>
                 </>
@@ -188,15 +211,29 @@ export default function TransferReceiptPage() {
 
       {(canConfirm || canCancel) && (
         <div className="print:hidden">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {canConfirm && (
-              <button
-                onClick={handleConfirm}
-                disabled={acting}
-                className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                {acting ? "Confirming..." : "Confirm receipt"}
-              </button>
+              <>
+                <label className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                  Actually received
+                  <input
+                    type="number"
+                    min={0}
+                    max={transfer.qty}
+                    value={confirmQty}
+                    onChange={(e) => setConfirmQty(e.target.value)}
+                    className="w-20 rounded-md border border-outline-variant bg-surface px-2 py-1 text-right text-xs tabular-nums text-on-surface"
+                  />
+                  <span>/ {transfer.qty.toLocaleString()}</span>
+                </label>
+                <button
+                  onClick={handleConfirm}
+                  disabled={acting}
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {acting ? "Confirming..." : "Confirm receipt"}
+                </button>
+              </>
             )}
             {canCancel && (
               <button

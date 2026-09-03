@@ -161,6 +161,17 @@ class ShipTransferRequest(BaseModel):
     destination_store: str
 
 
+class ConfirmTransferRequest(BaseModel):
+    """
+    The destination's real goods-receipt count - the RECADV counterpart to
+    the DESADV-like ship step, which can genuinely come in short (damage,
+    loss in transit). Optional and defaults to the full shipped qty server-
+    side (see routers/transfers.py's confirm_transfer) so confirming without
+    filling this in still behaves like a normal full receipt.
+    """
+    qty_confirmed: Optional[float] = None
+
+
 class StockTransfer(BaseModel):
     id: int
     item_id: str
@@ -174,6 +185,11 @@ class StockTransfer(BaseModel):
     shipped_at: str
     received_by: Optional[str] = None
     received_at: Optional[str] = None
+    # What the destination actually confirmed receiving, once confirmed -
+    # can be less than qty (damage/loss in transit is real shrinkage, not
+    # silently absorbed into the destination's stock). None while in_transit
+    # or cancelled.
+    qty_confirmed: Optional[float] = None
     # The item's real, unchanging full_price (risk_scores) and this
     # shipment's value at that price (qty x full_price) - computed here
     # from the shipped qty itself, so it stays correct even if the pipeline

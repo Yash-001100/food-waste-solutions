@@ -167,6 +167,21 @@ def _init_schema(con):
             received_at        TIMESTAMP
         )
     """)
+    # qty_confirmed - added after stock_transfers first shipped, so this is a
+    # migration on an existing table (the WAL-replay bug documented above
+    # applies here too - same check-then-plain-ALTER-then-CHECKPOINT pattern,
+    # not "ADD COLUMN IF NOT EXISTS"). Real EDI has a matching distinction:
+    # the DESADV (our ship) says what was dispatched, but the RECADV (our
+    # confirm) reports what was actually checked in, which can be less if
+    # something was damaged or went missing in transit - see
+    # routers/transfers.py's confirm_transfer. NULL until confirmed; once
+    # set, it (not the shipped qty) is what actually lands in the
+    # destination's stock (see inventory.py), so a shortfall is real
+    # shrinkage, not silently absorbed.
+    existing_transfer_cols = {r[1] for r in con.execute("PRAGMA table_info('stock_transfers')").fetchall()}
+    if "qty_confirmed" not in existing_transfer_cols:
+        con.execute("ALTER TABLE stock_transfers ADD COLUMN qty_confirmed DOUBLE")
+        con.execute("CHECKPOINT")
 
 
 def _register_views(con):

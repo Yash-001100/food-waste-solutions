@@ -13,6 +13,11 @@ export default function ReceiveStockPage() {
   const [incoming, setIncoming] = useState<StockTransfer[] | null>(null);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [confirmError, setConfirmError] = useState<Record<number, string>>({});
+  // Editable "what actually arrived" per pending transfer, keyed by transfer
+  // id - a string so the field can be blanked out while typing. Undefined
+  // (not yet touched) means "the full shipped qty", same as omitting
+  // qty_confirmed entirely on confirm.
+  const [confirmQty, setConfirmQty] = useState<Record<number, string>>({});
   const [result, setResult] = useState<ReceiveStockResponse | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,12 +41,17 @@ export default function ReceiveStockPage() {
     refreshIncoming();
   }, [user, refreshHistory, refreshIncoming]);
 
-  async function handleConfirm(transferId: number) {
+  async function handleConfirm(transferId: number, shippedQty: number) {
     if (!token) return;
     setConfirmingId(transferId);
     setConfirmError((prev) => ({ ...prev, [transferId]: "" }));
     try {
-      await api.confirmTransfer(token, transferId);
+      // Untouched field -> confirm the full shipped qty (send no override).
+      // Touched but not a valid number in range -> let the backend's own
+      // 0..shippedQty validation catch it rather than guessing here.
+      const raw = confirmQty[transferId];
+      const override = raw === undefined || raw === "" || Number(raw) === shippedQty ? undefined : Number(raw);
+      await api.confirmTransfer(token, transferId, override);
       refreshIncoming();
       refreshHistory();
       if (user) api.listItems(user.store).then(setItems).catch(() => {});
@@ -237,11 +247,23 @@ export default function ReceiveStockPage() {
                   {confirmError[t.id] && <p className="text-xs text-error">{confirmError[t.id]}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
+                  <label className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                    Received
+                    <input
+                      type="number"
+                      min={0}
+                      max={t.qty}
+                      value={confirmQty[t.id] ?? String(t.qty)}
+                      onChange={(e) => setConfirmQty((prev) => ({ ...prev, [t.id]: e.target.value }))}
+                      className="w-20 rounded-md border border-outline-variant bg-surface px-2 py-1 text-right text-xs tabular-nums text-on-surface"
+                    />
+                    <span>/ {t.qty.toLocaleString()}</span>
+                  </label>
                   <Link href={`/transfers/${t.id}`} className="text-xs font-medium text-primary hover:underline">
                     Receipt
                   </Link>
                   <button
-                    onClick={() => handleConfirm(t.id)}
+                    onClick={() => handleConfirm(t.id, t.qty)}
                     disabled={confirmingId === t.id}
                     className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
                   >

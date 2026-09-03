@@ -193,6 +193,10 @@ export interface StockTransfer {
   shipped_at: string;
   received_by?: string | null;
   received_at?: string | null;
+  // What the destination actually confirmed receiving, once confirmed - can
+  // be less than qty (damage/loss in transit is real shrinkage, not
+  // silently absorbed). Null while in_transit or cancelled.
+  qty_confirmed?: number | null;
   // This shipment's real value (qty x the item's full_price) - the $ line
   // on the receipt view. Computed from the shipped qty itself, so it's
   // stable even if a later pipeline run retires the exact recommended lane.
@@ -367,8 +371,21 @@ export const api = {
     );
   },
 
-  async confirmTransfer(token: string, transferId: number) {
-    return request<StockTransfer>(`/transfers/${transferId}/confirm`, { method: "POST" }, token);
+  async confirmTransfer(token: string, transferId: number, qtyConfirmed?: number) {
+    // Omitting qtyConfirmed sends no body at all - the backend then confirms
+    // the full shipped qty, same as before this feature existed. Passing it
+    // reports a real discrepancy (damage/loss in transit) at receipt time.
+    const hasQty = qtyConfirmed !== undefined;
+    return request<StockTransfer>(
+      `/transfers/${transferId}/confirm`,
+      {
+        method: "POST",
+        ...(hasQty
+          ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify({ qty_confirmed: qtyConfirmed }) }
+          : {}),
+      },
+      token
+    );
   },
 
   async cancelTransfer(token: string, transferId: number) {

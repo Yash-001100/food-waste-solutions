@@ -59,7 +59,10 @@ def get_stock_adjustments_by_item(con, store: str) -> dict[str, float]:
         any non-cancelled status - see routers/transfers.py's ship_transfer)
       + stock confirmed received INTO this store via a transfer (only once
         status = 'received' - an in_transit inbound transfer does not
-        count yet, same as a real ASN isn't inventory until it's scanned in)
+        count yet, same as a real ASN isn't inventory until it's scanned in).
+        Credits the store-reported qty_confirmed, not the shipped qty, so a
+        shortfall the destination flagged at confirm time (damage/loss in
+        transit) is real shrinkage rather than silently landing anyway.
     Zero-net items are dropped so callers can cheaply skip everything else.
     """
     adjustments: dict[str, float] = {}
@@ -71,7 +74,7 @@ def get_stock_adjustments_by_item(con, store: str) -> dict[str, float]:
     """, [store]).fetchall():
         adjustments[item_id] = adjustments.get(item_id, 0.0) - qty
     for item_id, qty in con.execute("""
-        SELECT item_id, sum(qty) FROM stock_transfers
+        SELECT item_id, sum(coalesce(qty_confirmed, qty)) FROM stock_transfers
         WHERE destination_store = ? AND status = 'received' GROUP BY item_id
     """, [store]).fetchall():
         adjustments[item_id] = adjustments.get(item_id, 0.0) + qty
