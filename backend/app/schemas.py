@@ -220,6 +220,11 @@ class StockMovement(BaseModel):
     performed_by: str
     performed_at: str
     risk_score_now: str
+    # transfer_in only, and only when a shortfall was reported: what was
+    # actually shipped, vs. qty above (what this store confirmed and is
+    # reflected in its own stock). None when there was no discrepancy - see
+    # routers/inventory.py's stock_movements.
+    shipped_qty: Optional[float] = None
 
 
 # --- Analytics (Task #10): real M5 daily sales + discount-response data,

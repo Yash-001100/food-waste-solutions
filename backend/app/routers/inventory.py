@@ -204,7 +204,7 @@ def stock_movements(store: str, limit: int = 50):
     """, [store]).fetchall()
 
     in_rows = con.execute("""
-        SELECT st.id, st.item_id, r.product_name, st.qty, st.origin_store, st.status,
+        SELECT st.id, st.item_id, r.product_name, st.qty, st.qty_confirmed, st.origin_store, st.status,
                st.received_by, st.received_at
         FROM stock_transfers st
         LEFT JOIN risk_scores r ON r.store = st.destination_store AND r.item_id = st.item_id
@@ -229,10 +229,18 @@ def stock_movements(store: str, limit: int = 50):
             performed_by=shipped_by, performed_at=str(shipped_at),
             risk_score_now=risk_now.get(item_id, "Low"),
         ))
-    for id_, item_id, product_name, qty, origin_store, status, received_by, received_at in in_rows:
+    for id_, item_id, product_name, qty, qty_confirmed, origin_store, status, received_by, received_at in in_rows:
+        # What actually landed here (and is reflected in this store's own
+        # stock) is qty_confirmed when the destination reported a shortfall,
+        # not the shipped qty - showing the shipped amount here would
+        # contradict both current_stock and the receipt page for the exact
+        # same transfer. shipped_qty is carried separately (only when it
+        # differs) so the history can still say "60 of 62 shipped arrived".
+        landed_qty = qty_confirmed if qty_confirmed is not None else qty
         movements.append(StockMovement(
             id=id_, kind="transfer_in", item_id=item_id, product_name=product_name or item_id,
-            qty=qty, counterparty=origin_store, status=status,
+            qty=landed_qty, shipped_qty=qty if landed_qty != qty else None,
+            counterparty=origin_store, status=status,
             performed_by=received_by or "", performed_at=str(received_at),
             risk_score_now=risk_now.get(item_id, "Low"),
         ))

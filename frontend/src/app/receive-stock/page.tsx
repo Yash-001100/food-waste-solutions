@@ -319,7 +319,16 @@ export default function ReceiveStockPage() {
                       {m.status !== "received" && <span className="block capitalize">{m.status.replace("_", " ")}</span>}
                     </span>
                   )}
-                  {m.kind === "transfer_in" && <span className="text-secondary">Received from {m.counterparty}</span>}
+                  {m.kind === "transfer_in" && (
+                    <span className="text-secondary">
+                      Received from {m.counterparty}
+                      {m.shipped_qty != null && (
+                        <span className="block text-error">
+                          {m.shipped_qty.toLocaleString()} shipped - {(m.shipped_qty - m.qty).toLocaleString()} lost in transit
+                        </span>
+                      )}
+                    </span>
+                  )}
                   {m.kind !== "receipt" && (
                     <Link href={`/transfers/${m.id}`} className="ml-1.5 font-medium text-primary hover:underline">
                       Receipt

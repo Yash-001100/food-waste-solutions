@@ -220,6 +220,10 @@ export interface StockMovement {
   performed_by: string;
   performed_at: string;
   risk_score_now: RiskTier;
+  // transfer_in only, and only when a shortfall was reported: what was
+  // actually shipped, vs. qty (what this store confirmed and actually
+  // landed in its own stock). Undefined/null when there was no discrepancy.
+  shipped_qty?: number | null;
 }
 
 export type ActionType = "markdown" | "transfer" | "donate" | "dispose" | "monitor";
