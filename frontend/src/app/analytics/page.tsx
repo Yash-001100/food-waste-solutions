@@ -46,7 +46,24 @@ const OUTCOME_COLOR: Record<string, string> = {
   "Deep markdown": "var(--color-tertiary-fixed-dim)",
   Monitored: "var(--color-outline-variant)",
   Disposed: "var(--color-error)",
+  // Same total-loss color as Disposed - a transfer shortfall never landed
+  // anywhere either, it's just not a decision anyone made (see
+  // routers/analytics.py's outcomes).
+  "Lost in transit": "var(--color-error)",
   Other: "var(--color-outline-variant)",
+};
+
+// Readable label for the transaction log's "Event" column - every
+// applied_actions type plus the synthetic transfer_loss row (see
+// routers/analytics.py's transaction_log), so a real shrinkage event never
+// reads as if someone chose to dispose of that stock.
+const EVENT_LABEL: Record<string, string> = {
+  markdown: "Markdown",
+  transfer: "Transfer",
+  donate: "Donate",
+  dispose: "Dispose",
+  monitor: "Monitor",
+  transfer_loss: "Lost in transit",
 };
 
 export default function AnalyticsPage() {
@@ -334,6 +351,7 @@ export default function AnalyticsPage() {
                 <tr className="border-b border-outline-variant text-left text-xs uppercase tracking-wide text-on-surface-variant">
                   <th className="px-4 py-2.5 font-semibold">Item ID</th>
                   <th className="px-4 py-2.5 font-semibold">Item</th>
+                  <th className="px-4 py-2.5 font-semibold">Event</th>
                   <th className="px-4 py-2.5 font-semibold text-right">Qty</th>
                   <th className="px-4 py-2.5 font-semibold text-right">Price</th>
                   <th className="px-4 py-2.5 font-semibold text-right">Discount</th>
@@ -347,6 +365,9 @@ export default function AnalyticsPage() {
                     <tr key={row.id} className={`border-b border-outline-variant last:border-0 ${reverted ? "opacity-50" : ""}`}>
                       <td className="px-4 py-2.5 text-xs text-on-surface-variant">{row.item_id}</td>
                       <td className={`px-4 py-2.5 text-on-surface ${reverted ? "line-through" : ""}`}>{row.product_name}</td>
+                      <td className={`px-4 py-2.5 text-xs ${row.action_type === "transfer_loss" ? "text-error" : "text-on-surface-variant"}`}>
+                        {EVENT_LABEL[row.action_type] ?? row.action_type}
+                      </td>
                       <td className="px-4 py-2.5 text-right tabular-nums text-on-surface-variant">
                         {row.quantity != null ? row.quantity.toLocaleString() : "—"}
                       </td>
@@ -392,7 +413,9 @@ export default function AnalyticsPage() {
         the moment each action was applied, frozen at that time; rows logged before this page existed show &quot;—&quot;
         since that snapshot wasn&apos;t captured yet. Disposed items show a real dollar figure in red - the full
         retail value written off - rather than the $0.00 they showed before, since disposing recovers nothing, unlike
-        a markdown, transfer, or donation.
+        a markdown, transfer, or donation. &quot;Lost in transit&quot; rows are the one event here nobody applied - a
+        store-to-store transfer that its destination confirmed receiving less of than what was shipped (see the
+        transfer&apos;s own receipt page); &quot;Qty&quot; there is the lost amount itself, not stock on hand.
       </p>
     </div>
   );

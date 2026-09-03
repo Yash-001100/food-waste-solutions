@@ -219,8 +219,33 @@ def outcomes(store: Optional[str] = Query(None), current_user: CurrentUser = Dep
         params,
     ).fetchall()
 
-    total = sum(r[1] for r in rows)
     slices = [OutcomeSlice(label=r[0], count=r[1], value_saved=round(r[2], 2), value_lost=round(r[3], 2)) for r in rows]
+
+    # "Lost in transit" - a real outcome that isn't an applied_action at all
+    # (see routers/transfers.py's confirm_transfer): the destination reported
+    # receiving less than what was shipped, and that shortfall never landed
+    # anywhere - real shrinkage, the same total-loss category as Disposed.
+    # Attributed to the destination store (the one that reported it), same
+    # as a dispose/donate is attributed to whichever store clicked it.
+    transit_where = "WHERE st.status = 'received' AND st.qty_confirmed IS NOT NULL AND st.qty_confirmed < st.qty"
+    transit_params: list = []
+    if store:
+        transit_where += " AND st.destination_store = ?"
+        transit_params.append(store)
+    transit_row = con.execute(
+        f"""
+        SELECT count(*), coalesce(sum((st.qty - st.qty_confirmed) * r.full_price), 0.0)
+        FROM stock_transfers st
+        LEFT JOIN risk_scores r ON r.store = st.origin_store AND r.item_id = st.item_id
+        {transit_where}
+        """,
+        transit_params,
+    ).fetchone()
+    if transit_row and transit_row[0] > 0:
+        slices.append(OutcomeSlice(label="Lost in transit", count=transit_row[0], value_saved=0.0,
+                                    value_lost=round(transit_row[1], 2)))
+
+    total = sum(s.count for s in slices)
     return OutcomesResponse(store=store, total=total, slices=slices)
 
 
@@ -233,9 +258,14 @@ def transaction_log(
     """
     The store's real applied-action log with product detail attached -
     every row is something an associate actually clicked "Apply"/"Donate"/
-    "Dispose" on (or reverted). `quantity` is the stock frozen at the moment
-    of that action (see stock_at_action in database.py); it's null for rows
-    applied before that column existed.
+    "Dispose" on (or reverted) - plus a synthetic "transfer_loss" row for
+    every confirmed transfer into this store that came in short (see
+    routers/transfers.py's confirm_transfer), so a real shrinkage event
+    shows up here even though no one "applied" it. `quantity` is the stock
+    frozen at the moment of that action (see stock_at_action in
+    database.py) for applied_actions rows, or the lost quantity itself for
+    a transfer_loss row; it's null for applied_actions rows logged before
+    that column existed.
     """
     con = get_connection()
     where = ""
@@ -270,4 +300,34 @@ def transaction_log(
         d["applied_at"] = str(d["applied_at"])
         d["product_name"] = d["product_name"] or d["item_id"]
         out.append(TransactionLogRow(**d))
-    return out
+
+    transit_where = "WHERE st.status = 'received' AND st.qty_confirmed IS NOT NULL AND st.qty_confirmed < st.qty"
+    transit_params: list = []
+    if store:
+        transit_where += " AND st.destination_store = ?"
+        transit_params.append(store)
+    transit_rows = con.execute(
+        f"""
+        SELECT st.id, st.destination_store, st.item_id, r.product_name,
+               (st.qty - st.qty_confirmed) AS lost_qty, r.full_price, st.received_at
+        FROM stock_transfers st
+        LEFT JOIN risk_scores r ON r.store = st.origin_store AND r.item_id = st.item_id
+        {transit_where}
+        ORDER BY st.received_at DESC
+        LIMIT ?
+        """,
+        transit_params + [limit],
+    ).fetchall()
+    for tid, dest_store, item_id, product_name, lost_qty, full_price, received_at in transit_rows:
+        out.append(TransactionLogRow(
+            # Negative id so it can never collide with a real applied_actions
+            # id (a BIGINT sequence starting at 1) in the frontend's React
+            # list keys - this row isn't an applied_action, it's derived.
+            id=-tid, store=dest_store, item_id=item_id, product_name=product_name or item_id,
+            action_type="transfer_loss", discount_pct=None, quantity=lost_qty, full_price=full_price,
+            value_saved=None, value_lost=round(lost_qty * full_price, 2) if full_price is not None else None,
+            status="received", applied_at=str(received_at),
+        ))
+
+    out.sort(key=lambda r: r.applied_at, reverse=True)
+    return out[:limit]
