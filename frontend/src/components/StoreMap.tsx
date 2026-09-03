@@ -1,22 +1,26 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import L from "leaflet";
 import type { LatLngBoundsExpression, LatLngTuple } from "leaflet";
-import { MapContainer, TileLayer, CircleMarker, Polyline, Tooltip, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, CircleMarker, Polyline, Tooltip, Popup } from "react-leaflet";
 import { StoreMapLane, StoreMapPoint } from "@/lib/api";
 
 /**
  * A real map - OpenStreetMap tiles via Leaflet, real lat/lon per store's
  * disclosed stand-in city, real projection (Leaflet/Web Mercator instead of
- * this project's earlier hand-rolled equirectangular sketch). Replaces the
- * abstract flat-rectangle version: an actual map lets you zoom into a tight
- * cluster (the WI stores, or CA_2/CA_3) instead of needing custom label-
- * collision code to fake that at a fixed scale.
+ * this project's earlier hand-rolled equirectangular sketch). Stores are
+ * classic map-pin markers (not plain dots) sized by real Critical item
+ * count, sitting on a small ground-shadow ellipse.
  *
- * The straight lines between stores are real transfer lanes (scripts/07 +
- * 08), not decoration - a line only exists here if that route is currently
- * real and cost-effective.
+ * Transfer lanes are real (scripts/07 + 08) but are NOT drawn by default
+ * any more - with up to 6 lanes touching 10 stores, permanent lines read as
+ * clutter before you've asked about any specific store. Instead: click a
+ * store's pin, and its popup lists that store's real active lane(s) as
+ * "Transfer" actions; picking one draws just that route on the map. This
+ * mirrors how a store associate would actually use it - "show me where
+ * THIS store's stock would go" - rather than showing every route at once.
  *
  * Deliberately NOT included, because none of it is real data this project
  * has: live GPS, "couriers en route," live traffic, dock/receiving windows,
@@ -24,8 +28,7 @@ import { StoreMapLane, StoreMapPoint } from "@/lib/api";
  *
  * Note: OpenStreetMap's tile servers are reached directly from the
  * viewer's own browser (not this app's backend), so they load normally
- * wherever this app actually runs - this only fails somewhere with no
- * general internet access at all.
+ * wherever this app actually runs.
  */
 
 const STATE_COLOR: Record<string, string> = {
@@ -53,6 +56,25 @@ const US_BOUNDS: LatLngBoundsExpression = [
   [50, -66],
 ];
 
+// A classic map-pin (teardrop + circular hole), not a plain dot - the same
+// silhouette as a standard location-marker icon. Drawn as a divIcon (no
+// image assets, no CDN) so its fill color can follow state/risk coloring.
+const PIN_PATH =
+  "M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z";
+
+function pinIcon(fill: string, size: number, dimmed: boolean) {
+  const height = Math.round(size * (512 / 384));
+  const html = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="${size}" height="${height}" style="display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));opacity:${dimmed ? 0.3 : 1}"><path d="${PIN_PATH}" fill="${fill}" stroke="#fff" stroke-width="12"/></svg>`;
+  return L.divIcon({
+    html,
+    className: "store-map-pin",
+    iconSize: [size, height],
+    iconAnchor: [size / 2, height],
+    popupAnchor: [0, -height * 0.92],
+    tooltipAnchor: [0, -height * 0.98],
+  });
+}
+
 export function StoreMap({
   stores,
   lanes,
@@ -68,6 +90,8 @@ export function StoreMap({
   showDistances: boolean;
   searchQuery: string;
 }) {
+  const [activeLane, setActiveLane] = useState<string | null>(null);
+
   const query = searchQuery.trim().toLowerCase();
   const matches = (s: StoreMapPoint) =>
     query.length === 0 || s.store.toLowerCase().includes(query) || s.city.toLowerCase().includes(query);
@@ -76,14 +100,16 @@ export function StoreMap({
   const points = useMemo(() => {
     const maxCritical = Math.max(...stores.map((s) => s.critical_items), 1);
     return stores.map((s) => {
-      const radius = 7 + Math.sqrt(s.critical_items / maxCritical) * 12;
+      const size = 26 + Math.sqrt(s.critical_items / maxCritical) * 16;
       const fill =
         colorMode === "risk" ? riskColor(s.critical_items / maxCritical) : STATE_COLOR[s.state] ?? "var(--color-outline)";
-      return { ...s, radius, fill, position: [s.lat, s.lon] as LatLngTuple };
+      return { ...s, size, fill, position: [s.lat, s.lon] as LatLngTuple };
     });
   }, [stores, colorMode]);
 
   const byStore = useMemo(() => Object.fromEntries(points.map((p) => [p.store, p])), [points]);
+
+  const laneKey = (l: { origin_store: string; destination_store: string }) => `${l.origin_store}-${l.destination_store}`;
 
   const laneSegments = useMemo(() => {
     const maxCount = Math.max(...lanes.map((l) => l.item_count), 1);
@@ -95,7 +121,7 @@ export function StoreMap({
         return {
           ...l,
           positions: [a.position, b.position] as LatLngTuple[],
-          weight: 1.5 + (l.item_count / maxCount) * 3,
+          weight: 2.5 + (l.item_count / maxCount) * 3,
           color: colorMode === "risk" ? "var(--color-outline)" : STATE_COLOR[a.state] ?? "var(--color-outline)",
         };
       })
@@ -111,6 +137,8 @@ export function StoreMap({
     return map;
   }, [laneSegments]);
 
+  const activeSegment = laneSegments.find((l) => laneKey(l) === activeLane) ?? null;
+
   return (
     <div>
       <MapContainer
@@ -125,57 +153,80 @@ export function StoreMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {laneSegments.map((l) => (
-          <Polyline key={`${l.origin_store}-${l.destination_store}`} positions={l.positions} pathOptions={{ color: l.color, weight: l.weight, lineCap: "round" }}>
+        {activeSegment && (
+          <Polyline positions={activeSegment.positions} pathOptions={{ color: activeSegment.color, weight: activeSegment.weight, lineCap: "round" }}>
             {showDistances && (
               <Tooltip permanent direction="center" className="!border-0 !bg-surface-container-low/90 !px-1 !py-0 !text-[10px] !font-semibold !text-on-surface-variant !shadow-none">
-                {l.distance_miles.toLocaleString()} mi
+                {activeSegment.distance_miles.toLocaleString()} mi
               </Tooltip>
             )}
           </Polyline>
-        ))}
+        )}
+
+        {/* A small ground-shadow ellipse under every pin (matches the
+            standard "pin standing on the ground" marker style); the
+            logged-in user's own store gets a dashed ring here instead, so
+            it doubles as the ground shadow and the "this is you" cue. */}
+        {points.map((p) => {
+          const dimmed = searchActive && !matches(p);
+          const isYou = p.store === highlightStore;
+          return (
+            <CircleMarker
+              key={`${p.store}-ground`}
+              center={p.position}
+              radius={isYou ? 12 : 5}
+              pathOptions={
+                isYou
+                  ? { fill: false, color: "var(--color-on-surface)", weight: 2, dashArray: "3,3", opacity: dimmed ? 0.2 : 1 }
+                  : { color: "transparent", fillColor: "#000", fillOpacity: dimmed ? 0.05 : 0.18, weight: 0 }
+              }
+              interactive={false}
+            />
+          );
+        })}
 
         {points.map((p) => {
           const dimmed = searchActive && !matches(p);
           const connectedLanes = lanesByStore[p.store] ?? [];
           return (
-            <CircleMarker
-              key={p.store}
-              center={p.position}
-              radius={p.radius}
-              pathOptions={{
-                color: "var(--color-surface)",
-                weight: 2,
-                fillColor: p.fill,
-                fillOpacity: dimmed ? 0.2 : 0.9,
-                opacity: dimmed ? 0.2 : 1,
-              }}
-            >
-              <Tooltip permanent direction="top" offset={[0, -p.radius]} className="!border-0 !bg-transparent !p-0 !text-xs !font-semibold !text-on-surface !shadow-none">
+            <Marker key={p.store} position={p.position} icon={pinIcon(p.fill, p.size, dimmed)}>
+              <Tooltip permanent direction="top" offset={[0, -p.size * 0.98]} className="!border-0 !bg-transparent !p-0 !text-xs !font-semibold !text-on-surface !shadow-none">
                 {p.store}
               </Tooltip>
-              <Popup>
-                <p className="font-semibold">{p.store} — {p.city}</p>
-                <p>{p.critical_items} Critical item{p.critical_items === 1 ? "" : "s"}</p>
-                {connectedLanes.map((l) => (
-                  <p key={`${l.origin_store}-${l.destination_store}`}>
-                    {l.origin_store === p.store ? "→" : "←"} {l.origin_store === p.store ? l.destination_store : l.origin_store}
-                    {" "}({l.distance_miles.toLocaleString()} mi, {l.item_count} items)
-                  </p>
-                ))}
+              <Popup minWidth={200}>
+                <p className="font-semibold text-on-surface">{p.store} — {p.city}</p>
+                <p className="text-on-surface-variant">{p.critical_items} Critical item{p.critical_items === 1 ? "" : "s"}</p>
+                <div className="mt-2 border-t border-outline-variant pt-2">
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-on-surface-variant">Transfer</p>
+                  {connectedLanes.length === 0 ? (
+                    <p className="text-xs text-on-surface-variant">No active transfer lane right now.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {connectedLanes.map((l) => {
+                        const key = laneKey(l);
+                        const isOrigin = l.origin_store === p.store;
+                        const other = isOrigin ? l.destination_store : l.origin_store;
+                        const isActive = activeLane === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => setActiveLane(isActive ? null : key)}
+                            className={`block w-full rounded px-2 py-1 text-left text-xs font-medium ${
+                              isActive ? "bg-secondary-container text-on-secondary-container" : "bg-surface-container hover:bg-surface-container-high"
+                            }`}
+                          >
+                            {isOrigin ? `Send to ${other}` : `Receive from ${other}`} · {l.distance_miles.toLocaleString()} mi
+                            {isActive ? " (shown)" : ""}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </Popup>
-            </CircleMarker>
+            </Marker>
           );
         })}
-
-        {highlightStore && byStore[highlightStore] && (
-          <CircleMarker
-            center={byStore[highlightStore].position}
-            radius={byStore[highlightStore].radius + 5}
-            pathOptions={{ fill: false, color: "var(--color-on-surface)", weight: 2, dashArray: "3,4" }}
-            interactive={false}
-          />
-        )}
       </MapContainer>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-on-surface-variant">
@@ -199,11 +250,7 @@ export function StoreMap({
           <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-dashed border-on-surface" />
           Your store
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-0.5 w-4 bg-outline" />
-          Active transfer route
-        </span>
-        <span>Marker size = Critical items at that store · click a marker for detail</span>
+        <span>Marker size = Critical items at that store · click a pin, then Transfer, to see its route</span>
       </div>
     </div>
   );
