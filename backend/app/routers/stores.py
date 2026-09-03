@@ -10,6 +10,12 @@ router = APIRouter(tags=["stores"])
 
 STORES = ["CA_1", "CA_2", "CA_3", "CA_4", "TX_1", "TX_2", "TX_3", "WI_1", "WI_2", "WI_3"]
 
+# Disclosed assumption (like RATE_PER_MILE in scripts/08): an average line-haul
+# speed for a loaded refrigerated truck, including stops - not live GPS/traffic
+# data (this project has none), just a reasonable way to turn a real distance
+# into a real-ish transit estimate.
+AVG_TRUCK_SPEED_MPH = 52
+
 _DISTANCES_PATH = PROC / "store_distances.json"
 _distances_cache = None
 
@@ -74,18 +80,6 @@ def store_map():
         "SELECT store, count(*) FROM risk_scores WHERE risk_score = 'Critical' GROUP BY store"
     ).fetchall())
 
-    stores = [
-        {
-            "store": s,
-            "state": s.split("_")[0],
-            "city": info["city"],
-            "lat": info["lat"],
-            "lon": info["lon"],
-            "critical_items": critical_counts.get(s, 0),
-        }
-        for s, info in data["stores"].items()
-    ]
-
     lane_rows = con.execute("""
         SELECT origin_store, destination_store,
                count(*) AS item_count,
@@ -100,11 +94,31 @@ def store_map():
             "origin_store": o, "destination_store": d,
             "item_count": int(n), "batch_value": v,
             "distance_miles": round(dist, 1), "shipment_cost": round(cost, 2),
+            "transit_minutes": round(dist / AVG_TRUCK_SPEED_MPH * 60),
         }
         for o, d, n, v, dist, cost in lane_rows
     ]
+    # Real status, not a fabricated "capacity %" - a store either is or isn't
+    # actually sending/receiving stock in a currently active, cost-effective
+    # lane right now (see scripts/08_transfer_cost_model.py).
+    sending_stores = {l["origin_store"] for l in lanes}
+    receiving_stores = {l["destination_store"] for l in lanes}
 
-    return {"stores": stores, "lanes": lanes, "rate_per_mile": data["rate_per_mile"]}
+    stores = [
+        {
+            "store": s,
+            "state": s.split("_")[0],
+            "city": info["city"],
+            "lat": info["lat"],
+            "lon": info["lon"],
+            "critical_items": critical_counts.get(s, 0),
+            "sending_now": s in sending_stores,
+            "receiving_now": s in receiving_stores,
+        }
+        for s, info in data["stores"].items()
+    ]
+
+    return {"stores": stores, "lanes": lanes, "rate_per_mile": data["rate_per_mile"], "avg_truck_speed_mph": AVG_TRUCK_SPEED_MPH}
 
 
 @router.get("/stores/{store}", response_model=StoreSummary)
@@ -151,6 +165,7 @@ def store_distances(store: str):
                 "city": data["stores"][row["store_b"]]["city"],
                 "miles": row["miles"],
                 "estimated_shipment_cost": round(row["miles"] * data["rate_per_mile"], 2),
+                "estimated_transit_minutes": round(row["miles"] / AVG_TRUCK_SPEED_MPH * 60),
             }
             for row in data["distances"]
             if row["store_a"] == store

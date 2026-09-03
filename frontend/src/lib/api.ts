@@ -86,6 +86,10 @@ export interface StoreDistance {
   city: string;
   miles: number;
   estimated_shipment_cost: number;
+  // Real distance / a disclosed average loaded-reefer-truck speed
+  // (backend/app/routers/stores.py: AVG_TRUCK_SPEED_MPH) - not live GPS or
+  // traffic data, which this project has none of.
+  estimated_transit_minutes: number;
 }
 
 export interface StoreDistancesResponse {
@@ -102,6 +106,10 @@ export interface StoreMapPoint {
   lat: number;
   lon: number;
   critical_items: number;
+  // Real, not a fabricated capacity % - whether this store actually appears
+  // as an origin/destination in a currently active, cost-effective lane.
+  sending_now: boolean;
+  receiving_now: boolean;
 }
 
 export interface StoreMapLane {
@@ -111,12 +119,14 @@ export interface StoreMapLane {
   batch_value: number;
   distance_miles: number;
   shipment_cost: number;
+  transit_minutes: number;
 }
 
 export interface StoreMapResponse {
   stores: StoreMapPoint[];
   lanes: StoreMapLane[];
   rate_per_mile: number;
+  avg_truck_speed_mph: number;
 }
 
 export type ActionType = "markdown" | "transfer" | "donate" | "dispose" | "monitor";
