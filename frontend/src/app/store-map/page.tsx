@@ -2,11 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { api, StoreMapResponse, StoreSummary, StoreDistancesResponse, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { StatTile } from "@/components/StatTile";
-import { StoreMap } from "@/components/StoreMap";
 import { formatUSD, formatTransitMinutes } from "@/lib/format";
+
+// Leaflet touches `window`/`navigator` at import time, which crashes
+// during Next's server render pass - load it client-only.
+const StoreMap = dynamic(() => import("@/components/StoreMap").then((m) => m.StoreMap), {
+  ssr: false,
+  loading: () => <p className="text-sm text-on-surface-variant">Loading map...</p>,
+});
 
 type ColorMode = "state" | "risk";
 
